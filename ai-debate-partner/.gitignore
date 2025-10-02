@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+.env
+.venv/
+
+# Node
+node_modules/
+.next/
+playwright-report/
+
+# Data
+/data/
+**/data/corpora/
+
+# Misc
+.DS_Store
+dist/
+build/
