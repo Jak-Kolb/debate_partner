@@ -1,3 +1,5 @@
+"""Unit tests for evaluation heuristics and rubric labeling."""
+
 import json
 
 from sqlalchemy import create_engine
@@ -12,10 +14,12 @@ from app.schemas import MessagePayload
 
 class DummyRetriever:
     def retrieve(self, query: str, limit: int = 3):  # pragma: no cover - not used in test
+        """Return no context so evaluation logic relies purely on stored history."""
         return []
 
 
 def create_session(db: Session) -> DebateSession:
+    """Seed a DebateSession with two assistant turns and one user rebuttal."""
     session = DebateSession(topic="Climate Policy", stance="Support carbon tax")
     payloads = [
         MessagePayload(
@@ -45,6 +49,7 @@ def create_session(db: Session) -> DebateSession:
 
 
 def test_evaluation_scoring_ranges() -> None:
+    """Ensure heuristic score generation stays within the rubric boundaries."""
     engine = create_engine("sqlite:///:memory:")
     TestingSession = sessionmaker(bind=engine)
     Base.metadata.create_all(engine)

@@ -1,0 +1,86 @@
+---
+title: "Project Checkpoint 1: AI Debate Partner"
+format: revealjs
+---
+
+## Problem Statement & Goal
+
+- Build an "AI Debate Partner" that always opposes the user on a chosen topic, avoids sycophancy, and grounds its arguments in a curated corpus.
+- Primary goal: deliver a debate experience that tracks stance consistency, flags hallucinations, and produces rubric feedback using an Argument Quality Score (AQS) rubric.
+
+## Methodology Overview
+
+- Backend: FastAPI service with retrieval-augmented generation; SQLite + SQLAlchemy for session state; FAISS-ready retriever for grounding.
+- Debate loop: anti-sycophancy prompt + local corpus snippets passed to an LLM abstraction for counter-arguments, with telemetry for hallucinations/opposition drift.
+- Frontend: Next.js + Tailwind flow (topic selection → live debate chat → feedback summary) consuming REST endpoints via Axios.
+
+## Code Snippet 1 — Retrieval Core
+
+```python
+class CorpusRetriever:
+    def retrieve(self, query: str, limit: int = 3) -> Sequence[RetrievedContext]:
+        if not query or not self.documents:
+            return []
+
+        ranked = sorted(
+            self.documents,
+            key=lambda doc: -self._overlap_score(query.lower(), doc.content.lower()),
+        )
+        return ranked[:limit]
+
+    def _overlap_score(self, query: str, text: str) -> int:
+        window = set(query.split())
+        return sum(1 for token in window if token in text)
+```
+
+## Snippet 1 Explanation
+
+- Implements the lightweight retrieval heuristic that feeds every debate turn; without relevant context, the LLM stub will surface uncertainty.
+- Token-overlap ranking makes it easy to swap in FAISS embeddings later while keeping an immediately testable baseline.
+
+## Code Snippet 2 — Debate Turn Handling
+
+```tsx
+const handleSend = async (message: string) => {
+  if (typeof sessionId !== 'string') return;
+  setBusy(true);
+  setTranscript((current) => [...current, { role: 'user', content: message }]);
+  try {
+    const response = await sendDebateMessage(sessionId, message);
+    setTranscript((current) => [
+      ...current,
+      {
+        role: 'assistant',
+        content: response.ai_message,
+        citations: response.citations,
+        hallucinationFlags: response.hallucination_flags,
+        oppositionConsistent: response.opposition_consistent,
+      },
+    ]);
+  } catch (error) { console.error('Failed to send debate message', error); }
+  finally { setBusy(false); }
+};
+```
+
+## Snippet 2 Explanation
+
+- Orchestrates the live debate UX: optimistic UI update, API call, and reinsertion of assistant responses augmented with grounding diagnostics.
+- Keeps the frontend aligned with backend telemetry (citations, hallucination flags, opposition consistency) essential for the feedback summary.
+
+## Preliminary Result
+
+- Seeded a sample document in `data/corpora/` and invoked `CorpusRetriever` directly from the scaffold to validate grounding.
+- Retrieval output:
+
+```text
+Retrieved contexts:
+- decarbonization.txt#chunk0: Carbon taxes provide a market-based mechanism to reduce emissions. Revenues can ...
+```
+
+## Result Analysis & Next Steps
+
+- Retrieval pipeline successfully loads on-disk corpora and surfaces relevant evidence, confirming the data path and chunking logic function without third-party dependencies.
+- Immediate next steps:
+  - Configure a full Python environment (network access permitting) to install FastAPI and run the API smoke tests end-to-end.
+  - Swap the heuristic overlap scorer for embeddings + FAISS to improve retrieval relevance.
+  - Connect a real LLM provider and extend Playwright tests to cover start/respond/evaluate interactions.

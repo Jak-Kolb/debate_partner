@@ -1,3 +1,4 @@
+// Landing page for topic selection before entering the debate flow.
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 
@@ -15,6 +16,7 @@ export default function HomePage() {
     try {
       const response = await startDebate({ topic, stance });
       if (typeof window !== 'undefined') {
+        // Cache session metadata so downstream pages can resume the thread.
         window.sessionStorage.setItem(
           `debate-${response.session_id}`,
           JSON.stringify({
@@ -32,6 +34,7 @@ export default function HomePage() {
         );
       }
       router.push({ pathname: '/debate', query: { sessionId: response.session_id } });
+      // The debate page reconstructs client state from the query + sessionStorage.
     } catch (err) {
       setError('Unable to start debate. Please try again.');
       console.error(err);

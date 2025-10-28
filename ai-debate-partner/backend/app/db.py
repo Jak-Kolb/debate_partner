@@ -1,3 +1,4 @@
+"""Database session utilities for SQLAlchemy persistence."""
 import os
 from contextlib import contextmanager
 from typing import Iterator
@@ -15,6 +16,7 @@ Base = declarative_base()
 
 
 def init_db() -> None:
+    """Create database tables for the debate session model."""
     from .debate import DebateSession  # noqa: F401  # ensure models imported
 
     Base.metadata.create_all(bind=engine)
@@ -22,6 +24,7 @@ def init_db() -> None:
 
 @contextmanager
 def session_scope() -> Iterator[Session]:
+    """Provide a transactional scope around a series of operations."""
     session = SessionLocal()
     try:
         yield session
@@ -34,5 +37,6 @@ def session_scope() -> Iterator[Session]:
 
 
 def get_session() -> Iterator[Session]:
+    """Yield a database session for dependency-injected FastAPI routes."""
     with session_scope() as session:
         yield session

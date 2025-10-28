@@ -1,3 +1,5 @@
+"""LLM abstraction that injects anti-sycophancy and factual guardrails."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,6 +20,8 @@ def _load_prompt(name: str) -> str:
 
 @dataclass
 class LLMMessage:
+    """Minimal chat-style message used to pass history into the model stub."""
+
     role: str
     content: str
 
@@ -26,10 +30,12 @@ class DebateLLM:
     """Abstraction layer for future LLM providers with deterministic stubs."""
 
     def __init__(self) -> None:
+        """Load reusable system prompts once per process."""
         self.antisycophancy_prompt = _load_prompt("system_antisycophancy.txt")
         self.guardrails_prompt = _load_prompt("system_factuality_guardrails.txt")
 
     def build_system_prompt(self) -> str:
+        """Compose guardrail prompts into a single system instruction block."""
         prompts = [self.antisycophancy_prompt, self.guardrails_prompt]
         return "\n\n".join([p for p in prompts if p])
 
@@ -42,6 +48,7 @@ class DebateLLM:
         context: Iterable[RetrievedContext],
         history: List[LLMMessage],
     ) -> str:
+        """Return a deterministic counter-argument scaffolded by retrieved context."""
         basis = self._context_summary(context)
         opposition_line = (
             f"I take the opposing view to your stance '{user_stance}' on '{topic}'."
@@ -57,6 +64,7 @@ class DebateLLM:
         return "\n\n".join(part for part in message_parts if part)
 
     def _context_summary(self, context: Iterable[RetrievedContext]) -> str:
+        """Condense retrieved chunks into bullet references for the reply."""
         items = list(context)
         if not items:
             return ""
@@ -67,11 +75,13 @@ class DebateLLM:
         return "\n".join(summary_parts)
 
     def opposition_consistent(self, reply: str, user_stance: str) -> bool:
+        """Heuristically detect whether the assistant drifted toward the user stance."""
         stance_tokens = set(user_stance.lower().split())
         matches = sum(1 for token in stance_tokens if token in reply.lower())
         return matches < max(1, len(stance_tokens))
 
     def detect_hallucinations(self, reply: str, context: Iterable[RetrievedContext]) -> List[str]:
+        """Flag ungrounded replies when no supporting retrieval context is present."""
         if any(context):
             return []
         return ["No supporting documents found; treat claims as ungrounded."]

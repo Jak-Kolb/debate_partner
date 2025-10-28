@@ -1,7 +1,9 @@
+# Compose stack for running FastAPI backend and Next.js frontend locally.
 version: "3.9"
 
 services:
   backend:
+    # Runs the FastAPI app with hot reload via volume mounts.
     image: python:3.11-slim
     working_dir: /app
     volumes:
@@ -15,6 +17,7 @@ services:
     command: bash -lc "pip install --no-cache-dir -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   frontend:
+    # Serves the Next.js client against the locally running backend.
     image: node:18
     working_dir: /app
     volumes:

@@ -1,3 +1,4 @@
+// Smoke test that verifies the landing page renders the topic picker.
 import { test, expect } from '@playwright/test';
 
 test('landing page renders topic picker', async ({ page }) => {

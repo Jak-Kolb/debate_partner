@@ -1,3 +1,4 @@
+// Live debate surface that streams turns and tracks session state.
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
@@ -28,6 +29,7 @@ export default function DebatePage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    // Restore the first assistant message and metadata from sessionStorage.
     if (typeof window === 'undefined' || typeof sessionId !== 'string') return;
     const raw = window.sessionStorage.getItem(`debate-${sessionId}`);
     if (!raw) return;
@@ -42,6 +44,7 @@ export default function DebatePage() {
   }, [metadata]);
 
   const handleSend = async (message: string) => {
+    // Optimistically append the user turn so the UI feels responsive.
     if (typeof sessionId !== 'string') return;
     setBusy(true);
     setTranscript((current) => [
@@ -51,6 +54,7 @@ export default function DebatePage() {
 
     try {
       const response = await sendDebateMessage(sessionId, message);
+      // Append the assistant reply once the backend responds.
       setTranscript((current) => [
         ...current,
         {
@@ -69,6 +73,7 @@ export default function DebatePage() {
   };
 
   if (typeof sessionId !== 'string') {
+    // The router has not hydrated yet; show a placeholder until it does.
     return <p className="p-6">Loading session…</p>;
   }
 

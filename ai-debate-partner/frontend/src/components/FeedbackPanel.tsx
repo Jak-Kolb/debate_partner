@@ -1,3 +1,4 @@
+// Displays rubric scores and supplemental evaluation guidance.
 import { ReactNode } from 'react';
 
 type FeedbackPanelProps = {
@@ -30,6 +31,7 @@ export function FeedbackPanel({
       </header>
 
       <div className="grid grid-cols-2 gap-3 text-sm">
+        {/* Show each rubric dimension in a compact grid for quick scanning. */}
         {Object.entries(scores).map(([dimension, value]) => (
           <div key={dimension} className="rounded border px-3 py-2">
             <p className="font-semibold capitalize">{dimension}</p>
@@ -46,6 +48,7 @@ export function FeedbackPanel({
       {notes && <p className="text-sm text-slate-700">{notes}</p>}
 
       {actions && <div className="pt-2">{actions}</div>}
+      {/* Parent pages can pass CTA links (continue debating, etc.) via actions. */}
     </section>
   );
 }

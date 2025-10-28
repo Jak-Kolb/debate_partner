@@ -1,3 +1,5 @@
+"""Debate session persistence and orchestration logic."""
+
 from __future__ import annotations
 
 import json
@@ -15,6 +17,8 @@ from .schemas import MessagePayload
 
 
 class DebateSession(Base):
+    """SQLAlchemy model storing debate metadata and conversation history."""
+
     __tablename__ = "debate_sessions"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
@@ -27,21 +31,26 @@ class DebateSession(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     def history_messages(self) -> List[MessagePayload]:
+        """Return stored turns as Pydantic payloads for downstream consumers."""
         data = json.loads(self.history or "[]")
         return [MessagePayload(**item) for item in data]
 
     def append_message(self, message: MessagePayload) -> None:
+        """Persist a new message onto the serialized conversation history."""
         messages = [msg.dict() for msg in self.history_messages()]
         messages.append(message.dict())
         self.history = json.dumps(messages)
 
 
 class DebateManager:
+    """Facade coordinating session storage, retrieval, and model responses."""
+
     def __init__(self, retriever: CorpusRetriever, llm: DebateLLM) -> None:
         self.retriever = retriever
         self.llm = llm
 
     def start_session(self, db: Session, *, topic: str, stance: str) -> Tuple[DebateSession, str, List[str], List[str], bool]:
+        """Create a new session and generate the opening assistant reply."""
         session = DebateSession(topic=topic, stance=stance)
         db.add(session)
         db.flush()
@@ -60,6 +69,7 @@ class DebateManager:
         session: DebateSession,
         user_message: str,
     ) -> Tuple[str, List[str], List[str], bool]:
+        """Persist a user rebuttal and return the assistant counter-argument."""
         session.append_message(
             MessagePayload(role="user", content=user_message, citations=[])
         )
@@ -77,6 +87,7 @@ class DebateManager:
         db: Session,
         user_message: str,
     ) -> Tuple[str, List[str], List[str], bool]:
+        """Build the assistant message, update metrics, and persist session state."""
         history_payloads = session.history_messages()
         history = [
             LLMMessage(role=msg.role, content=msg.content)
@@ -113,17 +124,21 @@ class DebateManager:
         return reply, citations, hallucinations, opposition_consistent
 
     def get_session(self, db: Session, session_id: str) -> DebateSession | None:
+        """Fetch a session by identifier or return None if missing."""
         return db.query(DebateSession).filter(DebateSession.id == session_id).one_or_none()
 
     def opposition_ratio(self, session: DebateSession) -> float:
+        """Return the fraction of turns that maintained opposition to the user stance."""
         if session.assistant_turns == 0:
             return 1.0
         return 1 - (session.opposition_drift_turns / session.assistant_turns)
 
     def hallucination_rate(self, session: DebateSession) -> float:
+        """Compute the percentage of turns flagged for lacking grounding."""
         if session.assistant_turns == 0:
             return 0.0
         return session.hallucination_events / session.assistant_turns
 
     def history_as_messages(self, session: DebateSession) -> Sequence[MessagePayload]:
+        """Expose session history for evaluation without leaking ORM internals."""
         return session.history_messages()

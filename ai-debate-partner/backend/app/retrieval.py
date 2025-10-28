@@ -1,3 +1,5 @@
+"""Lightweight local retrieval over the on-disk corpora."""
+
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,6 +11,8 @@ DEFAULT_OVERLAP = 40
 
 @dataclass
 class RetrievedContext:
+    """Chunked document content returned by the retriever."""
+
     source: str
     content: str
 
@@ -35,6 +39,7 @@ class CorpusRetriever:
         self.documents = self._load_documents()
 
     def _load_documents(self) -> List[RetrievedContext]:
+        """Read and chunk corpus files into retrievable contexts."""
         if not self.corpus_dir.exists():
             return []
 
@@ -48,6 +53,7 @@ class CorpusRetriever:
         return contexts
 
     def _chunk_text(self, text: str) -> Iterable[str]:
+        """Yield overlapping slices of a document for dense retrieval."""
         if len(text) <= self.chunk_size:
             yield text
             return
@@ -60,9 +66,11 @@ class CorpusRetriever:
             yield chunk
 
     def refresh(self) -> None:
+        """Reload corpus chunks from disk (used at startup or when docs change)."""
         self.documents = self._load_documents()
 
     def retrieve(self, query: str, limit: int = 3) -> Sequence[RetrievedContext]:
+        """Return the top-N chunks ranked by naive token overlap with the query."""
         if not query or not self.documents:
             return []
 
@@ -73,11 +81,13 @@ class CorpusRetriever:
         return ranked[:limit]
 
     def _overlap_score(self, query: str, text: str) -> int:
+        """Score overlap using shared tokens as a lightweight similarity proxy."""
         window = set(query.split())
         return sum(1 for token in window if token in text)
 
 
 def format_context(contexts: Sequence[RetrievedContext]) -> Tuple[str, List[str]]:
+    """Aggregate retrieval chunks into a citation bundle for prompting."""
     if not contexts:
         return "", []
 

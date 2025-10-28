@@ -1,3 +1,4 @@
+// Renders the live debate transcript and message composer.
 import { FormEvent, useMemo, useState } from 'react';
 
 type TranscriptItem = {
@@ -19,6 +20,7 @@ export function DebateChat({ sessionId, transcript, onSend, busy = false }: Deba
   const [draft, setDraft] = useState('');
 
   const lastAssistant = useMemo(
+    // Track the latest assistant turn so we can surface stance-drift warnings.
     () => transcript.filter((entry) => entry.role === 'assistant').slice(-1)[0],
     [transcript]
   );
@@ -40,6 +42,7 @@ export function DebateChat({ sessionId, transcript, onSend, busy = false }: Deba
       </header>
 
       <div className="border rounded p-4 space-y-3 max-h-96 overflow-y-auto">
+        {/* Transcript area shows both user and assistant turns with lightweight cues. */}
         {transcript.map((item, index) => (
           <article
             key={`${item.role}-${index}`}
@@ -70,6 +73,7 @@ export function DebateChat({ sessionId, transcript, onSend, busy = false }: Deba
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-2">
+        {/* Simple textarea flow keeps the UX keyboard-friendly. */}
         <textarea
           className="w-full border rounded px-3 py-2"
           rows={3}

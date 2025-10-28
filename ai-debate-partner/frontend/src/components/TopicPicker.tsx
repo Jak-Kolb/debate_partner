@@ -1,3 +1,4 @@
+// Collects a topic and user stance before creating a new session.
 import { FormEvent, useState } from 'react';
 
 type TopicPickerProps = {
@@ -10,6 +11,7 @@ export function TopicPicker({ onStart, loading = false }: TopicPickerProps) {
   const [stance, setStance] = useState('');
 
   const handleSubmit = async (event: FormEvent) => {
+    // Avoid page reloads and skip empty submissions.
     event.preventDefault();
     if (!topic || !stance) return;
     await onStart(topic, stance);

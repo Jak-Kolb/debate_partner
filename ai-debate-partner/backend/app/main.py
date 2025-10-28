@@ -1,3 +1,5 @@
+"""FastAPI entrypoint wiring debate and evaluation endpoints."""
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -40,6 +42,7 @@ def on_startup() -> None:
 
 @app.get("/health")
 def health() -> dict[str, str]:
+    """Return a simple readiness probe for deployment checks."""
     return {"status": "ok"}
 
 
@@ -48,6 +51,7 @@ def debate_start(
     payload: StartDebateRequest,
     db: Session = Depends(get_session),
 ) -> StartDebateResponse:
+    """Open a new debate session and return the first assistant turn."""
     session, reply, citations, hallucinations, opposition_consistent = debate_manager.start_session(
         db,
         topic=payload.topic,
@@ -67,6 +71,7 @@ def debate_respond(
     payload: DebateRespondRequest,
     db: Session = Depends(get_session),
 ) -> DebateRespondResponse:
+    """Record a user rebuttal and stream back the assistant reply."""
     session = debate_manager.get_session(db, payload.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -90,6 +95,7 @@ def evaluate(
     payload: EvaluationRequest,
     db: Session = Depends(get_session),
 ) -> EvaluationResponse:
+    """Compute rubric feedback for the requested session."""
     try:
         return evaluation_service.evaluate_session(db, payload.session_id)
     except ValueError as exc:
