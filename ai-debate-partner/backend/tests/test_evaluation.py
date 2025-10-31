@@ -13,12 +13,12 @@ from app.schemas import MessagePayload
 
 
 class DummyRetriever:
-    def retrieve(self, query: str, limit: int = 3):  # pragma: no cover - not used in test
+    def retrieveContexts(self, query: str, limit: int = 3):  # pragma: no cover - not used in test
         """Return no context so evaluation logic relies purely on stored history."""
         return []
 
 
-def create_session(db: Session) -> DebateSession:
+def createSession(db: Session) -> DebateSession:
     """Seed a DebateSession with two assistant turns and one user rebuttal."""
     session = DebateSession(topic="Climate Policy", stance="Support carbon tax")
     payloads = [
@@ -39,7 +39,7 @@ def create_session(db: Session) -> DebateSession:
             citations=["doc2#chunk1"],
         ),
     ]
-    session.history = json.dumps([msg.dict() for msg in payloads])
+    session.history = json.dumps([msg.model_dump() for msg in payloads])
     session.assistant_turns = 2
     session.hallucination_events = 0
     session.opposition_drift_turns = 0
@@ -55,11 +55,11 @@ def test_evaluation_scoring_ranges() -> None:
     Base.metadata.create_all(engine)
 
     with TestingSession() as db:
-        session = create_session(db)
+        session = createSession(db)
         manager = DebateManager(retriever=DummyRetriever(), llm=DebateLLM())
         service = EvaluationService(manager)
 
-        result = service.evaluate_session(db, session.id)
+        result = service.evaluateSession(db, session.id)
 
     assert 1.0 <= result.aqs_overall <= 5.0
     assert result.label in {"Poor", "Okay", "Good", "Excellent"}

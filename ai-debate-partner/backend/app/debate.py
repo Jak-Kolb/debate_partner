@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from .db import Base
 from .llm import DebateLLM, LLMMessage
-from .retrieval import CorpusRetriever, RetrievedContext, format_context
+from .retrieval import CorpusRetriever, RetrievedContext, formatContext
 from .schemas import MessagePayload
 
 
@@ -30,15 +30,15 @@ class DebateSession(Base):
     opposition_drift_turns = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    def history_messages(self) -> List[MessagePayload]:
+    def historyMessages(self) -> List[MessagePayload]:
         """Return stored turns as Pydantic payloads for downstream consumers."""
         data = json.loads(self.history or "[]")
         return [MessagePayload(**item) for item in data]
 
-    def append_message(self, message: MessagePayload) -> None:
+    def appendMessage(self, message: MessagePayload) -> None:
         """Persist a new message onto the serialized conversation history."""
-        messages = [msg.dict() for msg in self.history_messages()]
-        messages.append(message.dict())
+        messages = [msg.model_dump() for msg in self.historyMessages()]
+        messages.append(message.model_dump())
         self.history = json.dumps(messages)
 
 
@@ -49,13 +49,13 @@ class DebateManager:
         self.retriever = retriever
         self.llm = llm
 
-    def start_session(self, db: Session, *, topic: str, stance: str) -> Tuple[DebateSession, str, List[str], List[str], bool]:
+    def startSession(self, db: Session, *, topic: str, stance: str) -> Tuple[DebateSession, str, List[str], List[str], bool]:
         """Create a new session and generate the opening assistant reply."""
         session = DebateSession(topic=topic, stance=stance)
         db.add(session)
         db.flush()
 
-        reply, citations, hallucinations, opposition_consistent = self._generate_reply(
+        reply, citations, hallucinations, opposition_consistent = self._generateReply(
             session=session,
             db=db,
             user_message="",
@@ -70,17 +70,17 @@ class DebateManager:
         user_message: str,
     ) -> Tuple[str, List[str], List[str], bool]:
         """Persist a user rebuttal and return the assistant counter-argument."""
-        session.append_message(
+        session.appendMessage(
             MessagePayload(role="user", content=user_message, citations=[])
         )
-        reply, citations, hallucinations, opposition_consistent = self._generate_reply(
+        reply, citations, hallucinations, opposition_consistent = self._generateReply(
             session=session,
             db=db,
             user_message=user_message,
         )
         return reply, citations, hallucinations, opposition_consistent
 
-    def _generate_reply(
+    def _generateReply(
         self,
         *,
         session: DebateSession,
@@ -88,31 +88,32 @@ class DebateManager:
         user_message: str,
     ) -> Tuple[str, List[str], List[str], bool]:
         """Build the assistant message, update metrics, and persist session state."""
-        history_payloads = session.history_messages()
+        history_payloads = session.historyMessages()
         history = [
             LLMMessage(role=msg.role, content=msg.content)
             for msg in history_payloads
         ]
-        contexts = self.retriever.retrieve(
+        contexts = self.retriever.retrieveContexts(
             query=user_message or f"{session.topic} {session.stance}"
         )
-        _, citations = format_context(contexts)
-        reply = self.llm.generate_reply(
+        context_bundle, citations = formatContext(contexts)
+        reply = self.llm.generateReply(
             topic=session.topic,
             user_stance=session.stance,
             user_message=user_message,
             context=contexts,
             history=history,
+            context_bundle=context_bundle,
         )
-        hallucinations = self.llm.detect_hallucinations(reply, contexts)
-        opposition_consistent = self.llm.opposition_consistent(reply, session.stance)
+        hallucinations = self.llm.detectHallucinations(reply, contexts)
+        opposition_consistent = self.llm.oppositionConsistent(reply, session.stance)
 
         payload = MessagePayload(
             role="assistant",
             content=reply,
             citations=citations,
         )
-        session.append_message(payload)
+        session.appendMessage(payload)
         session.assistant_turns += 1
         if not opposition_consistent:
             session.opposition_drift_turns += 1
@@ -123,22 +124,22 @@ class DebateManager:
         db.flush()
         return reply, citations, hallucinations, opposition_consistent
 
-    def get_session(self, db: Session, session_id: str) -> DebateSession | None:
+    def getSession(self, db: Session, session_id: str) -> DebateSession | None:
         """Fetch a session by identifier or return None if missing."""
         return db.query(DebateSession).filter(DebateSession.id == session_id).one_or_none()
 
-    def opposition_ratio(self, session: DebateSession) -> float:
+    def oppositionRatio(self, session: DebateSession) -> float:
         """Return the fraction of turns that maintained opposition to the user stance."""
         if session.assistant_turns == 0:
             return 1.0
         return 1 - (session.opposition_drift_turns / session.assistant_turns)
 
-    def hallucination_rate(self, session: DebateSession) -> float:
+    def hallucinationRate(self, session: DebateSession) -> float:
         """Compute the percentage of turns flagged for lacking grounding."""
         if session.assistant_turns == 0:
             return 0.0
         return session.hallucination_events / session.assistant_turns
 
-    def history_as_messages(self, session: DebateSession) -> Sequence[MessagePayload]:
+    def historyAsMessages(self, session: DebateSession) -> Sequence[MessagePayload]:
         """Expose session history for evaluation without leaking ORM internals."""
-        return session.history_messages()
+        return session.historyMessages()

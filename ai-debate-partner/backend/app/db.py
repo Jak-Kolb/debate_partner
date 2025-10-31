@@ -15,7 +15,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
 
-def init_db() -> None:
+def initDb() -> None:
     """Create database tables for the debate session model."""
     from .debate import DebateSession  # noqa: F401  # ensure models imported
 
@@ -23,7 +23,7 @@ def init_db() -> None:
 
 
 @contextmanager
-def session_scope() -> Iterator[Session]:
+def sessionScope() -> Iterator[Session]:
     """Provide a transactional scope around a series of operations."""
     session = SessionLocal()
     try:
@@ -36,7 +36,7 @@ def session_scope() -> Iterator[Session]:
         session.close()
 
 
-def get_session() -> Iterator[Session]:
+def getSession() -> Iterator[Session]:
     """Yield a database session for dependency-injected FastAPI routes."""
-    with session_scope() as session:
+    with sessionScope() as session:
         yield session
