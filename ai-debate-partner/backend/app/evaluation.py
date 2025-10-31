@@ -17,25 +17,25 @@ class EvaluationService:
     def __init__(self, debate_manager: DebateManager) -> None:
         self.debate_manager = debate_manager
 
-    def evaluate_session(self, db: Session, session_id: str) -> EvaluationResponse:
+    def evaluateSession(self, db: Session, session_id: str) -> EvaluationResponse:
         """Evaluate a persisted session and produce rubric feedback."""
-        session = self.debate_manager.get_session(db, session_id)
+        session = self.debate_manager.getSession(db, session_id)
         if not session:
             raise ValueError(f"Session {session_id} not found")
 
-        history = self.debate_manager.history_as_messages(session)
+        history = self.debate_manager.historyAsMessages(session)
         assistant_messages = [msg for msg in history if msg.role == "assistant"]
 
-        clarity = self._score_clarity(assistant_messages)
-        evidence = self._score_evidence(assistant_messages)
-        logic = self._score_logic(assistant_messages)
-        rebuttal = self._score_rebuttal(history)
+        clarity = self._scoreClarity(assistant_messages)
+        evidence = self._scoreEvidence(assistant_messages)
+        logic = self._scoreLogic(assistant_messages)
+        rebuttal = self._scoreRebuttal(history)
 
-        opposition_consistency = (self.debate_manager.opposition_ratio(session) * 100)
-        hallucination_rate = self.debate_manager.hallucination_rate(session) * 100
+        opposition_consistency = (self.debate_manager.oppositionRatio(session) * 100)
+        hallucination_rate = self.debate_manager.hallucinationRate(session) * 100
         aqs_overall = round(mean([clarity, evidence, logic, rebuttal]), 2)
-        label = self._label(aqs_overall, hallucination_rate, opposition_consistency)
-        notes = self._notes(label)
+        label = self._labelScore(aqs_overall, hallucination_rate, opposition_consistency)
+        notes = self._notesForLabel(label)
 
         scores = EvaluationScores(
             clarity=round(clarity, 2),
@@ -53,33 +53,33 @@ class EvaluationService:
             notes=notes,
         )
 
-    def _score_clarity(self, messages: List[MessagePayload]) -> float:
+    def _scoreClarity(self, messages: List[MessagePayload]) -> float:
         """Score clarity based on average message length as a proxy for detail."""
         if not messages:
             return 1.0
         avg_length = mean(len(msg.content.split()) for msg in messages)
-        return self._clamp(2.0 + (avg_length / 60), 1.0, 5.0)
+        return self._clampValue(2.0 + (avg_length / 60), 1.0, 5.0)
 
-    def _score_evidence(self, messages: List[MessagePayload]) -> float:
+    def _scoreEvidence(self, messages: List[MessagePayload]) -> float:
         """Reward turns that cite retrieval sources."""
         total_citations = sum(len(msg.citations) for msg in messages)
-        return self._clamp(1.5 + (total_citations * 0.8), 1.0, 5.0)
+        return self._clampValue(1.5 + (total_citations * 0.8), 1.0, 5.0)
 
-    def _score_logic(self, messages: List[MessagePayload]) -> float:
+    def _scoreLogic(self, messages: List[MessagePayload]) -> float:
         """Look for simple logical markers to approximate argument cohesion."""
         coherent = sum(1 for msg in messages if "therefore" in msg.content.lower())
         ratio = coherent / len(messages) if messages else 0
-        return self._clamp(2.2 + ratio * 2.5, 1.0, 5.0)
+        return self._clampValue(2.2 + ratio * 2.5, 1.0, 5.0)
 
-    def _score_rebuttal(self, history: List[MessagePayload]) -> float:
+    def _scoreRebuttal(self, history: List[MessagePayload]) -> float:
         """Count paired exchanges to reflect engagement with the user."""
         pairings = min(
             sum(1 for msg in history if msg.role == "assistant"),
             sum(1 for msg in history if msg.role == "user"),
         )
-        return self._clamp(2.0 + pairings * 0.5, 1.0, 5.0)
+        return self._clampValue(2.0 + pairings * 0.5, 1.0, 5.0)
 
-    def _label(self, aqs: float, hallucination_rate: float, opposition: float) -> str:
+    def _labelScore(self, aqs: float, hallucination_rate: float, opposition: float) -> str:
         """Map numeric metrics into rubric labels using configured thresholds."""
         if aqs < 3.0 or hallucination_rate > 25 or opposition < 60:
             return "Poor"
@@ -91,7 +91,7 @@ class EvaluationService:
             return "Excellent"
         return "Okay"
 
-    def _notes(self, label: str) -> str:
+    def _notesForLabel(self, label: str) -> str:
         """Return canned coaching language matching the rubric tier."""
         mapping = {
             "Poor": "Substantial issues detected — revisit grounding and stance control.",
@@ -101,6 +101,6 @@ class EvaluationService:
         }
         return mapping.get(label, "")
 
-    def _clamp(self, value: float, lower: float, upper: float) -> float:
+    def _clampValue(self, value: float, lower: float, upper: float) -> float:
         """Restrict heuristic scores to the rubric 1-5 range."""
         return max(lower, min(upper, value))

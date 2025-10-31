@@ -36,9 +36,9 @@ class CorpusRetriever:
             self.corpus_dir = base_dir / "data" / "corpora"
         self.chunk_size = chunk_size
         self.overlap = overlap
-        self.documents = self._load_documents()
+        self.documents = self._loadDocuments()
 
-    def _load_documents(self) -> List[RetrievedContext]:
+    def _loadDocuments(self) -> List[RetrievedContext]:
         """Read and chunk corpus files into retrievable contexts."""
         if not self.corpus_dir.exists():
             return []
@@ -46,13 +46,13 @@ class CorpusRetriever:
         contexts: List[RetrievedContext] = []
         for path in sorted(self.corpus_dir.rglob("*.txt")):
             text = path.read_text(encoding="utf-8")
-            for idx, chunk in enumerate(self._chunk_text(text)):
+            for idx, chunk in enumerate(self._chunkText(text)):
                 contexts.append(
                     RetrievedContext(source=f"{path.name}#chunk{idx}", content=chunk)
                 )
         return contexts
 
-    def _chunk_text(self, text: str) -> Iterable[str]:
+    def _chunkText(self, text: str) -> Iterable[str]:
         """Yield overlapping slices of a document for dense retrieval."""
         if len(text) <= self.chunk_size:
             yield text
@@ -65,28 +65,28 @@ class CorpusRetriever:
                 break
             yield chunk
 
-    def refresh(self) -> None:
+    def refreshCorpus(self) -> None:
         """Reload corpus chunks from disk (used at startup or when docs change)."""
-        self.documents = self._load_documents()
+        self.documents = self._loadDocuments()
 
-    def retrieve(self, query: str, limit: int = 3) -> Sequence[RetrievedContext]:
+    def retrieveContexts(self, query: str, limit: int = 3) -> Sequence[RetrievedContext]:
         """Return the top-N chunks ranked by naive token overlap with the query."""
         if not query or not self.documents:
             return []
 
         ranked = sorted(
             self.documents,
-            key=lambda doc: -self._overlap_score(query.lower(), doc.content.lower()),
+            key=lambda doc: -self._overlapScore(query.lower(), doc.content.lower()),
         )
         return ranked[:limit]
 
-    def _overlap_score(self, query: str, text: str) -> int:
+    def _overlapScore(self, query: str, text: str) -> int:
         """Score overlap using shared tokens as a lightweight similarity proxy."""
         window = set(query.split())
         return sum(1 for token in window if token in text)
 
 
-def format_context(contexts: Sequence[RetrievedContext]) -> Tuple[str, List[str]]:
+def formatContext(contexts: Sequence[RetrievedContext]) -> Tuple[str, List[str]]:
     """Aggregate retrieval chunks into a citation bundle for prompting."""
     if not contexts:
         return "", []
