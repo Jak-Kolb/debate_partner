@@ -33,13 +33,14 @@ struct Evidence { // struct for holding all of the article for one topic
     // }
 
     void addArticle(Article article){ 
-        articles.emplace_back(article.idx, article.summary, article.content, article.used);
+        // articles.emplace_back(article.idx, article.summary, article.content, article.used);
+        articles.push_back(article);
     }
 
     std::string getArticleContent(size_t idx){
         if (idx >= articles.size()) {
             std::cout << "message.hpp: No article at that index" << std::endl;
-            return false;
+            return "";
         }
         std::string content = articles[idx].content;
         return content;
@@ -78,7 +79,7 @@ class Message {
                 oss << "id: " << evidence.articles[i].idx << " summary: " << evidence.articles[i].summary << " content: " << evidence.articles[i].content << "\n";
             }
 
-            std::cout << oss << std::endl;
+            std::cout << oss.str() << std::endl;
         }
     private: 
         Evidence gatherEvidence(std::vector<std::string> paths){
