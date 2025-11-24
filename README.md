@@ -45,20 +45,6 @@ Built with **Next.js** and **Tailwind CSS**, providing a responsive interface fo
 
 ## Instructions to Run
 
-### Option 1: Docker Compose (Recommended)
-
-The easiest way to run the entire stack is using Docker Compose.
-
-1. Ensure you have Docker and Docker Compose installed.
-2. Create a `.env` file in the `backend/` directory (see `backend/.env.example`).
-3. Run the following command from the `ai-debate-partner` directory:
-   ```bash
-   docker-compose up --build
-   ```
-4. Access the frontend at `http://localhost:3000` and the backend API docs at `http://localhost:8000/docs`.
-
-### Option 2: Manual Setup
-
 **Backend:**
 
 1. Navigate to `ai-debate-partner/backend`.
@@ -71,7 +57,7 @@ The easiest way to run the entire stack is using Docker Compose.
    ```bash
    pip install -r requirements.txt
    ```
-4. Set up your `.env` file.
+4. Set up your `.env` file (see `.env.example`).
 5. Run the server:
    ```bash
    uvicorn app.main:app --reload
@@ -101,7 +87,7 @@ The easiest way to run the entire stack is using Docker Compose.
 ### Adapted from Prior Code
 
 - **RAG Pipeline**: The retrieval logic in `backend/app/retrieval.py` was adapted from standard FAISS/Sentence-Transformer tutorials and examples to fit the specific needs of debate context retrieval.
-- **Project Scaffolding**: The initial file structure and Docker configuration were adapted from standard full-stack FastAPI/Next.js templates.
+- **Project Scaffolding**: The initial file structure was adapted from standard full-stack FastAPI/Next.js templates.
 
 ### Copied from External Repositories
 
