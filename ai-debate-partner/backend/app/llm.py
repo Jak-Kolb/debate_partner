@@ -75,6 +75,38 @@ class DebateLLM:
         prompts = [self.antisycophancy_prompt, self.guardrails_prompt]
         return "\n\n".join([p for p in prompts if p])
 
+    def generateSubtopics(self, topic: str) -> List[str]:
+        """Generate 5 relevant subtopics for the given topic."""
+        if self.client is not None:
+            try:
+                prompt = (
+                    f"List 5 relevant subtopics for a debate on '{topic}'. "
+                    "Return only the subtopics as a numbered list."
+                )
+                completion = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.7,
+                )
+                content = self._extractContent(completion)
+                if content:
+                    # Parse the numbered list
+                    lines = [line.strip() for line in content.splitlines() if line.strip()]
+                    # Remove numbering (e.g., "1. Subtopic" -> "Subtopic")
+                    subtopics = []
+                    for line in lines:
+                        parts = line.split(".", 1)
+                        if len(parts) > 1:
+                            subtopics.append(parts[1].strip())
+                        else:
+                            subtopics.append(line)
+                    return subtopics[:5]
+            except Exception as exc:
+                logger.exception("LLM subtopic generation failed: %s", exc)
+
+        # Fallback if LLM fails or is not configured
+        return []
+
     def generateReply(
         self,
         *,
@@ -86,37 +118,34 @@ class DebateLLM:
         context_bundle: Optional[str] = None,
         temperature: float = 0.2,
     ) -> str:
-        """Call the OpenAI API when available and fall back to a deterministic reply."""
+        """Call the OpenAI API when available."""
         context_items = list(context)
         if context_bundle is None:
             context_bundle, _ = formatContext(context_items)
 
-        if self.client is not None:
-            messages = self._buildChatMessages(
-                topic=topic,
-                user_stance=user_stance,
-                user_message=user_message,
-                history=history,
-                context_text=context_bundle,
-            )
-            try:
-                completion = self.client.chat.completions.create(
-                    model=self.model_name,
-                    messages=messages,
-                    temperature=temperature,
-                )
-                content = self._extractContent(completion)
-                if content:
-                    return content
-            except Exception as exc:  # pragma: no cover - defensive against API/runtime failures
-                logger.exception("LLM request failed, using fallback reply: %s", exc)
+        if self.client is None:
+             return "Failed to get an answer from API: OpenAI client is not initialized."
 
-        return self._fallbackReply(
+        messages = self._buildChatMessages(
             topic=topic,
             user_stance=user_stance,
             user_message=user_message,
-            context=context_items,
+            history=history,
+            context_text=context_bundle,
         )
+        try:
+            completion = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+                temperature=temperature,
+            )
+            content = self._extractContent(completion)
+            if content:
+                return content
+            return "Failed to get an answer from API: Empty response."
+        except Exception as exc:
+            logger.exception("LLM request failed: %s", exc)
+            return f"Failed to get an answer from API: {exc}"
 
     def _buildChatMessages(
         self,
@@ -131,15 +160,23 @@ class DebateLLM:
         instructions = [self.buildSystemPrompt()]
         instructions.append(
             (
-                "You are participating in a structured debate. The user supports the stance "
-                f"'{user_stance}' on the topic '{topic}'. Always respond with a cogent counter-argument, "
-                "reference evidence when available, and maintain a respectful tone. Cite sources "
-                "by their identifier when you rely on them."
+                "You are a professional debater tasked with arguing against the user. "
+                f"The topic is '{topic}'. The user's stance is: '{user_stance}'. "
+                "Your goal is to adopt and maintain the OPPOSITE stance throughout the entire conversation. "
+                "Never agree with the user. "
+                "Construct compelling counter-arguments using the provided evidence where relevant. "
+                "In your opening statement, clearly define the opposing position you will be defending. "
+                "Integrate evidence naturally into your argument without explicitly citing filenames or chunk IDs. "
+                "Review the conversation history to avoid repeating arguments or evidence. "
+                "Directly address the user's latest point. "
+                "Open the debate naturally by countering the user's stance."
+                "Be concise yet persuasive in your responses. Your response length is somewhat up to your discretion based on what the user prompts you with."
+                "While length is somewhat up to your discretion, you MUST keep responses between around 25 and 150 words."
             )
         )
         if context_text:
             instructions.append(
-                "Retrieved evidence you can cite:\n" + context_text
+                "Retrieved evidence you can use:\n" + context_text
             )
         else:
             instructions.append(
@@ -182,49 +219,6 @@ class DebateLLM:
             return "\n".join(parts).strip()
 
         return ""
-
-    def _fallbackReply(
-        self,
-        *,
-        topic: str,
-        user_stance: str,
-        user_message: str,
-        context: Iterable[RetrievedContext],
-    ) -> str:
-        """Deterministic reply used when the OpenAI API is unavailable."""
-        contexts = list(context)
-        opposition_line = (
-            f"You support '{user_stance}' on '{topic}', so I will argue the opposing position."
-        )
-
-        evidence_phrase = "Based on the retrieved evidence:" if contexts else (
-            "I could not retrieve grounded evidence specific to this topic."
-        )
-        evidence_lines: List[str] = []
-        for ctx in contexts:
-            preview = ctx.content.strip().splitlines()[0][:200]
-            evidence_lines.append(f"- {preview} ({ctx.source})")
-
-        if user_message:
-            rebuttal = (
-                "Your recent point — '"
-                + user_message[:160]
-                + "' — overlooks trade-offs that weaken your stance."
-            )
-        else:
-            rebuttal = "To open, the policy you advocate raises meaningful risks that deserve scrutiny."
-
-        guidance = (
-            "Given the thin evidence, treat this critique as provisional while we surface stronger citations."
-            if not contexts
-            else "These references indicate viable counterpoints that undermine your argument."
-        )
-
-        sections = [opposition_line, evidence_phrase]
-        if evidence_lines:
-            sections.append("\n".join(evidence_lines))
-        sections.extend([rebuttal, guidance])
-        return "\n\n".join(part for part in sections if part)
 
     def oppositionConsistent(self, reply: str, user_stance: str) -> bool:
         """Heuristically detect whether the assistant drifted toward the user stance."""

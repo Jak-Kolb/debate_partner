@@ -7,3 +7,4 @@ faiss-cpu>=1.7.4
 pytest>=7.4.4
 httpx>=0.25.1
 openai
+python-dotenv>=1.0.0

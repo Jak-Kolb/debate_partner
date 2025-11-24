@@ -27,6 +27,27 @@ class StartDebateResponse(BaseModel):
     opposition_consistent: bool
 
 
+class SubtopicRequest(BaseModel):
+    """Request to generate relevant subtopics for a given topic."""
+    topic: str
+
+
+class SubtopicResponse(BaseModel):
+    """List of generated subtopics."""
+    subtopics: List[str]
+
+
+class UploadRequest(BaseModel):
+    """Request to upload a text chunk to the corpus."""
+    content: str
+
+
+class UploadResponse(BaseModel):
+    """Confirmation of upload."""
+    message: str
+    filename: str
+
+
 class DebateRespondRequest(BaseModel):
     """User rebuttal payload for an existing debate session."""
     session_id: str

@@ -1,6 +1,7 @@
 """Lightweight local retrieval over the on-disk corpora."""
 
 import os
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Sequence, Tuple
@@ -65,6 +66,19 @@ class CorpusRetriever:
                 break
             yield chunk
 
+    def saveDocument(self, content: str) -> str:
+        """Save a new document to the corpus directory and refresh."""
+        if not self.corpus_dir.exists():
+            self.corpus_dir.mkdir(parents=True, exist_ok=True)
+        
+        filename = f"upload_{uuid.uuid4().hex}.txt"
+        file_path = self.corpus_dir / filename
+        file_path.write_text(content, encoding="utf-8")
+        
+        # Refresh the in-memory documents
+        self.refreshCorpus()
+        return filename
+
     def refreshCorpus(self) -> None:
         """Reload corpus chunks from disk (used at startup or when docs change)."""
         self.documents = self._loadDocuments()
@@ -82,7 +96,16 @@ class CorpusRetriever:
 
     def _overlapScore(self, query: str, text: str) -> int:
         """Score overlap using shared tokens as a lightweight similarity proxy."""
-        window = set(query.split())
+        stop_words = {
+            "the", "is", "at", "which", "on", "and", "a", "an", "in", "to", "of",
+            "for", "it", "that", "this", "with", "as", "by", "from", "or", "but",
+            "not", "be", "are", "was", "were", "so", "if", "what", "where", "when",
+            "why", "how", "i", "you", "he", "she", "they", "we", "my", "your",
+            "think", "believe", "opinion", "better", "worse", "vs", "versus"
+        }
+        window = set(word for word in query.split() if word not in stop_words)
+        if not window:
+            return 0
         return sum(1 for token in window if token in text)
 
 

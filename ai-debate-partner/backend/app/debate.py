@@ -94,7 +94,7 @@ class DebateManager:
             for msg in history_payloads
         ]
         contexts = self.retriever.retrieveContexts(
-            query=user_message or f"{session.topic} {session.stance}"
+            query=f"{session.topic} {user_message}"
         )
         context_bundle, citations = formatContext(contexts)
         reply = self.llm.generateReply(

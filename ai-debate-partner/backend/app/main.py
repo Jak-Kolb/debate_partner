@@ -3,6 +3,9 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from .db import getSession, initDb
 from .debate import DebateManager
@@ -16,6 +19,10 @@ from .schemas import (
     EvaluationResponse,
     StartDebateRequest,
     StartDebateResponse,
+    SubtopicRequest,
+    SubtopicResponse,
+    UploadRequest,
+    UploadResponse,
 )
 
 app = FastAPI(title="AI Debate Partner", version="0.1.0")
@@ -44,6 +51,20 @@ def onStartup() -> None:
 def healthCheck() -> dict[str, str]:
     """Return a simple readiness probe for deployment checks."""
     return {"status": "ok"}
+
+
+@app.post("/topic/subtopics", response_model=SubtopicResponse)
+def generateSubtopics(payload: SubtopicRequest) -> SubtopicResponse:
+    """Generate relevant subtopics for a given topic."""
+    subtopics = llm.generateSubtopics(payload.topic)
+    return SubtopicResponse(subtopics=subtopics)
+
+
+@app.post("/upload", response_model=UploadResponse)
+def uploadDocument(payload: UploadRequest) -> UploadResponse:
+    """Upload a text chunk to the corpus."""
+    filename = retriever.saveDocument(payload.content)
+    return UploadResponse(message="Document uploaded successfully", filename=filename)
 
 
 @app.post("/debate/start", response_model=StartDebateResponse)
