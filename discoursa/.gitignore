@@ -1,8 +1,0 @@
-.env
-json.hpp
-.bazelrc
-bazel-bin/
-bazel-out/
-bazel-discoursa/
-bazel-testlogs/
-articles/*.txt

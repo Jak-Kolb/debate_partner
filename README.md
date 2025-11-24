@@ -1,102 +1,112 @@
-# debate_partner
+# AI Debate Partner
 
-An LLM partner catered specifically for the purpose of engaging in fair, beneficial, but heated debate.
-Project: “AI Debate Partner”
-Goal: Scaffold a full stack that matches this spec (backend + frontend + eval).
+An LLM-powered debate partner designed to engage users in fair, beneficial, and heated debates. The system challenges the user's stance, resists sycophancy, grounds claims in evidence, and provides detailed feedback based on a debate rubric.
 
-Functional pillars
+## Code Structure
 
-Debate engine that opposes user stance on chosen topic, resists sycophancy, grounds claims, and avoids fallacies.
+The project is organized as a full-stack application with a Python backend and a TypeScript/React frontend.
 
-Rubric feedback (AQS 1–5: clarity, evidence, logic, rebuttal strength) + hallucination checks + opposition consistency tracking.
+### `backend/`
 
-Topic constraints, retrieval grounding, uncertainty markers.
+Built with **FastAPI**, this service handles the core debate logic, LLM interactions, and session management.
 
-Tech choices
+- **`app/main.py`**: Entry point for the API, defining endpoints for starting debates, responding, and evaluation.
+- **`app/debate.py`**: Manages debate sessions, state persistence, and the orchestration of the debate flow.
+- **`app/llm.py`**: Abstraction layer for LLM providers (e.g., OpenAI), handling prompt construction and generation.
+- **`app/retrieval.py`**: Implements the RAG (Retrieval-Augmented Generation) pipeline using **FAISS** and **Sentence Transformers** to ground arguments in the provided corpora.
+- **`app/evaluation.py`**: Contains the logic for scoring debates based on the Argument Quality Score (AQS) rubric, checking for hallucinations, and tracking opposition consistency.
+- **`app/db.py`**: Database configuration using **SQLAlchemy** (defaults to SQLite).
+- **`data/corpora/`**: Directory for text files used as the knowledge base for the debate partner.
 
-Backend: Python FastAPI; endpoints: /debate/start, /debate/respond, /evaluate, /health.
+### `frontend/`
 
-Retrieval: local vector store (FAISS), docs in data/corpora/\*; embed with sentence-transformers.
+Built with **Next.js** and **Tailwind CSS**, providing a responsive interface for the debate experience.
 
-LLM calls: abstracted in app/llm.py so we can swap providers. Add anti-sycophancy system prompts.
+- **`src/pages/`**: Application routes (Topic Selection, Debate Interface, Summary/Feedback).
+- **`src/components/`**: Reusable UI components like `DebateChat`, `TopicPicker`, and `FeedbackPanel`.
+- **`src/lib/api.ts`**: API client for communicating with the backend.
 
-Frontend: Next.js + Tailwind; pages for Topic Select → Live Debate → Feedback Summary.
+## Dependencies
 
-Storage: SQLite for sessions & metrics via SQLAlchemy; simple for now.
+### Backend
 
-Testing: pytest backend; Playwright smoke test frontend.
+- **FastAPI & Uvicorn**: Web framework and ASGI server.
+- **SQLAlchemy**: ORM for database interactions.
+- **OpenAI**: Client for LLM generation.
+- **Sentence-Transformers & FAISS**: For embedding generation and vector similarity search.
+- **Pydantic**: Data validation and settings management.
 
-CI: GitHub Actions to run pytest and npm test.
+### Frontend
 
-Deliverables to generate now
+- **Next.js**: React framework for production.
+- **React**: UI library.
+- **Tailwind CSS**: Utility-first CSS framework for styling.
+- **Axios**: HTTP client.
 
-File tree (exact) and minimal working stubs:
+## Instructions to Run
 
-ai-debate-partner/
-├─ README.md
-├─ .gitignore
-├─ docker-compose.yml
-├─ backend/
-│ ├─ app/
-│ │ ├─ main.py
-│ │ ├─ schemas.py
-│ │ ├─ debate.py
-│ │ ├─ evaluation.py
-│ │ ├─ retrieval.py
-│ │ ├─ llm.py
-│ │ ├─ prompts/
-│ │ │ ├─ system_antisycophancy.txt
-│ │ │ ├─ system_factuality_guardrails.txt
-│ │ └─ db.py
-│ ├─ tests/
-│ │ ├─ test_health.py
-│ │ └─ test_evaluation.py
-│ ├─ requirements.txt
-│ └─ .env.example
-├─ frontend/
-│ ├─ package.json
-│ ├─ next.config.js
-│ ├─ src/
-│ │ ├─ pages/
-│ │ │ ├─ index.tsx
-│ │ │ ├─ debate.tsx
-│ │ │ └─ summary.tsx
-│ │ ├─ components/
-│ │ │ ├─ TopicPicker.tsx
-│ │ │ ├─ DebateChat.tsx
-│ │ │ └─ FeedbackPanel.tsx
-│ │ └─ lib/api.ts
-│ └─ tests/
-│ └─ smoke.spec.ts
-└─ .github/workflows/ci.yml
+### Option 1: Docker Compose (Recommended)
 
-Back end behavior:
+The easiest way to run the entire stack is using Docker Compose.
 
-/debate/start – POST topic & user stance → returns session_id + first AI counter-position.
+1. Ensure you have Docker and Docker Compose installed.
+2. Create a `.env` file in the `backend/` directory (see `backend/.env.example`).
+3. Run the following command from the `ai-debate-partner` directory:
+   ```bash
+   docker-compose up --build
+   ```
+4. Access the frontend at `http://localhost:3000` and the backend API docs at `http://localhost:8000/docs`.
 
-/debate/respond – POST session_id + user_msg → returns AI response, hallucination_flags, opposition_consistent: bool.
+### Option 2: Manual Setup
 
-/evaluate – POST session_id → returns AQS (1–5) with sub-scores and explanations, hallucination rate, opposition consistency %.
+**Backend:**
 
-Retrieval pipeline that chunks docs in data/corpora/ and grounds claims.
+1. Navigate to `ai-debate-partner/backend`.
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Set up your `.env` file.
+5. Run the server:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
 
-evaluation.py with rubric and thresholds:
+**Frontend:**
 
-Poor: AQS < 3.0; Hallucination > 25%; Opposition < 60%
+1. Navigate to `ai-debate-partner/frontend`.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-Okay: 3.0–3.5; 15–25%; 60–75%
+## Attribution
 
-Good: 3.6–4.2; 5–15%; 76–90%
+### Written by Me
 
-Excellent: > 4.2; < 5%; > 90%
+- **Debate Orchestration Logic**: The core state machine in `backend/app/debate.py` that manages the turn-taking, history tracking, and opposition drift metrics.
+- **Evaluation System**: The implementation of the AQS rubric and scoring algorithms in `backend/app/evaluation.py`.
+- **Frontend Components**: Custom React components for the chat interface (`DebateChat.tsx`) and the interactive feedback panel (`FeedbackPanel.tsx`).
+- **Prompt Engineering**: The specific system prompts for anti-sycophancy and factuality guardrails located in `backend/app/prompts/`.
 
-Front end:
+### Adapted from Prior Code
 
-Topic picker → start session → live threaded debate UI → summary with scores.
+- **RAG Pipeline**: The retrieval logic in `backend/app/retrieval.py` was adapted from standard FAISS/Sentence-Transformer tutorials and examples to fit the specific needs of debate context retrieval.
+- **Project Scaffolding**: The initial file structure and Docker configuration were adapted from standard full-stack FastAPI/Next.js templates.
 
-Show uncertainty markers on AI claims and tooltips for grounded citations.
+### Copied from External Repositories
 
-DX:
+- **UI/UX Patterns**: Some Tailwind CSS utility patterns and layout structures were referenced from open-source component libraries.
+- **Boilerplate**: Standard configuration files (e.g., `tsconfig.json`, `.gitignore`) are based on default framework generators.
 
 backend/requirements.txt with FastAPI, uvicorn, SQLAlchemy, pydantic, sentence-transformers, faiss-cpu, pytest.
 
