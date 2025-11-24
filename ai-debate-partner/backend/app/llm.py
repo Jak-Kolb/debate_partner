@@ -86,7 +86,7 @@ class DebateLLM:
                 completion = self.client.chat.completions.create(
                     model=self.model_name,
                     messages=[{"role": "user", "content": prompt}],
-                    temperature=0.7,
+                    temperature=1,
                 )
                 content = self._extractContent(completion)
                 if content:
@@ -116,7 +116,7 @@ class DebateLLM:
         context: Iterable[RetrievedContext],
         history: List[LLMMessage],
         context_bundle: Optional[str] = None,
-        temperature: float = 0.2,
+        temperature: float = 1,
     ) -> str:
         """Call the OpenAI API when available."""
         context_items = list(context)
