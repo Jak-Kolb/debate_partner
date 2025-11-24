@@ -57,7 +57,11 @@ Built with **Next.js** and **Tailwind CSS**, providing a responsive interface fo
    ```bash
    pip install -r requirements.txt
    ```
-4. Set up your `.env` file (see `.env.example`).
+4. Set up your environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Open the `.env` file and add your `LLM_API_KEY` (e.g., OpenAI API key) to enable the debate partner functionality.
 5. Run the server:
    ```bash
    uvicorn app.main:app --reload
