@@ -33,62 +33,61 @@ export function DebateChat({ sessionId, transcript, onSend, busy = false }: Deba
   };
 
   return (
-    <div className="space-y-4">
-      <header className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Session {sessionId}</h2>
+    <section className="panel">
+      <header className="panel-header">
+        <div>
+          <p className="eyebrow">Active session</p>
+          <h2>Session {sessionId}</h2>
+        </div>
         {lastAssistant?.oppositionConsistent === false && (
-          <span className="text-xs font-medium text-amber-600">Warning: stance drift detected</span>
+          <span className="warning-pill">Stance drift detected</span>
         )}
       </header>
 
-      <div className="border rounded p-4 space-y-3 max-h-96 overflow-y-auto">
-        {/* Transcript area shows both user and assistant turns with lightweight cues. */}
+      <div className="scroll-area transcript" aria-live="polite" aria-label="Debate transcript">
         {transcript.map((item, index) => (
           <article
             key={`${item.role}-${index}`}
-            className={item.role === 'assistant' ? 'text-slate-900' : 'text-slate-600'}
+            className={`transcript__item ${item.role === 'assistant' ? 'transcript__item--assistant' : ''}`}
           >
-            <p className="font-semibold capitalize">{item.role}</p>
-            <p className="whitespace-pre-line text-sm leading-6">
+            <p className="transcript__item-role">{item.role}</p>
+            <p className="whitespace-pre-line">
               {item.content}
               {item.role === 'assistant' && !item.citations?.length && (
-                <span className="ml-1 text-xs text-amber-600">[uncertain]</span>
+                <span className="helper-text" style={{ marginLeft: '0.35rem' }}>[uncertain]</span>
               )}
             </p>
-            {!!item.citations?.length && (
-              <ul className="text-xs text-slate-500 list-disc pl-5">
-                {item.citations.map((citation) => (
-                  <li key={citation}>{citation}</li>
-                ))}
-              </ul>
-            )}
             {!!item.hallucinationFlags?.length && (
-              <p className="text-xs text-red-600">
+              <p className="helper-text" style={{ color: 'var(--danger)' }}>
                 {item.hallucinationFlags.join(' ')}
               </p>
             )}
           </article>
         ))}
-        {!transcript.length && <p className="text-sm text-slate-500">Waiting for the first response…</p>}
+        {!transcript.length && (
+          <p className="helper-text">Waiting for the first response…</p>
+        )}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-2">
-        {/* Simple textarea flow keeps the UX keyboard-friendly. */}
+      <form onSubmit={handleSubmit} className="form-grid">
+        <label htmlFor="debate-draft" className="visually-hidden">
+          Compose rebuttal
+        </label>
         <textarea
-          className="w-full border rounded px-3 py-2"
-          rows={3}
+          id="debate-draft"
+          className="textarea-field"
+          rows={4}
           placeholder="Challenge the assistant..."
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
         />
-        <button
-          className="rounded bg-blue-600 text-white px-4 py-2 font-semibold disabled:opacity-50"
-          disabled={busy}
-          type="submit"
-        >
-          {busy ? 'Sending…' : 'Send rebuttal'}
-        </button>
+        <div className="action-row">
+          <span className="helper-text">Shift + Enter for a new line</span>
+          <button className="button button-primary" disabled={busy} type="submit">
+            {busy ? 'Sending…' : 'Send rebuttal'}
+          </button>
+        </div>
       </form>
-    </div>
+    </section>
   );
 }

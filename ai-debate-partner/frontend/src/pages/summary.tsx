@@ -45,17 +45,18 @@ export default function SummaryPage() {
   }, [sessionId]);
 
   return (
-    <main className="min-h-screen bg-slate-100 py-12 px-6">
-      <section className="max-w-3xl mx-auto space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-2xl font-bold">Feedback summary</h1>
-          {typeof sessionId === 'string' && (
-            <p className="text-sm text-slate-600">Session ID: {sessionId}</p>
-          )}
+    <main className="app-shell">
+      <section className="panel panel-narrow">
+        <header className="panel-header">
+          <div>
+            <p className="eyebrow">Feedback summary</p>
+            <h1 style={{ margin: 0 }}>Session review</h1>
+          </div>
+          {typeof sessionId === 'string' && <p className="helper-text">ID: {sessionId}</p>}
         </header>
 
-        {loading && <p>Loading evaluation…</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {loading && <p className="helper-text">Loading evaluation…</p>}
+        {error && <p className="alert alert--error">{error}</p>}
 
         {evaluation && (
           <FeedbackPanel
@@ -66,14 +67,14 @@ export default function SummaryPage() {
             oppositionConsistency={evaluation.opposition_consistency}
             notes={evaluation.notes}
             actions={
-              <Link className="text-sm text-blue-600 underline" href={{ pathname: '/debate', query: { sessionId } }}>
+              <Link className="button button-secondary" href={{ pathname: '/debate', query: { sessionId } }}>
                 Return to debate
               </Link>
             }
           />
         )}
 
-        <Link className="text-sm text-blue-600 underline" href="/">
+        <Link className="link-inline" href="/">
           Start a new session
         </Link>
       </section>

@@ -2,58 +2,142 @@
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 
-import { TopicPicker } from '../components/TopicPicker';
-import { startDebate } from '../lib/api';
+import { getSubtopics, uploadDocument } from '../lib/api';
 
 export default function HomePage() {
   const router = useRouter();
+  const [step, setStep] = useState<'topic' | 'setup'>('topic');
+  const [topic, setTopic] = useState('');
+  const [subtopics, setSubtopics] = useState<string[]>([]);
+  const [articleText, setArticleText] = useState('');
+  const [uploadCount, setUploadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleStart = async (topic: string, stance: string) => {
+  const handleGetSubtopics = async () => {
+    if (!topic.trim()) return;
     setLoading(true);
     setError(null);
     try {
-      const response = await startDebate({ topic, stance });
-      if (typeof window !== 'undefined') {
-        // Cache session metadata so downstream pages can resume the thread.
-        window.sessionStorage.setItem(
-          `debate-${response.session_id}`,
-          JSON.stringify({
-            sessionId: response.session_id,
-            topic,
-            stance,
-            initialTurn: {
-              role: 'assistant',
-              content: response.ai_message,
-              citations: response.citations,
-              hallucinationFlags: response.hallucination_flags,
-              oppositionConsistent: response.opposition_consistent,
-            },
-          })
-        );
-      }
-      router.push({ pathname: '/debate', query: { sessionId: response.session_id } });
-      // The debate page reconstructs client state from the query + sessionStorage.
+      const subs = await getSubtopics(topic);
+      setSubtopics(subs);
+      setStep('setup');
     } catch (err) {
-      setError('Unable to start debate. Please try again.');
+      setError('Failed to generate subtopics. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleUpload = async () => {
+    if (!articleText.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await uploadDocument(articleText);
+      setUploadCount((c) => c + 1);
+      setArticleText('');
+    } catch (err) {
+      setError('Failed to upload article.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartDebate = () => {
+    router.push({ pathname: '/debate', query: { topic } });
+  };
+
   return (
-    <main className="min-h-screen bg-slate-100 py-16 px-6">
-      <section className="max-w-3xl mx-auto space-y-6">
-        <header className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold">AI Debate Partner</h1>
-          <p className="text-slate-600">
-            Select a topic, share your stance, and receive grounded opposition with rubric feedback.
+    <main className="app-shell">
+      <section className="panel home-panel">
+        <header style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <p className="eyebrow">AI Debate Partner</p>
+          <h1 style={{ margin: 0, fontSize: '2.5rem' }}>Sharpen your arguments</h1>
+          <p className="helper-text" style={{ marginTop: '0.5rem' }}>
+            Generate subtopics, gather evidence, and challenge an opposition stance.
           </p>
         </header>
-        {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-        <TopicPicker onStart={handleStart} loading={loading} />
+
+        {error && <p className="alert alert--error" role="status">{error}</p>}
+
+        {step === 'topic' && (
+          <div className="form-grid">
+            <div className="form-grid">
+              <label htmlFor="topic-entry" className="helper-text">
+                What topic do you want to debate?
+              </label>
+              <input
+                id="topic-entry"
+                className="input-field"
+                placeholder="e.g., Universal Basic Income"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleGetSubtopics()}
+              />
+            </div>
+            <button
+              className="button button-primary button-full"
+              onClick={handleGetSubtopics}
+              disabled={loading || !topic.trim()}
+              type="button"
+            >
+              {loading ? 'Generating subtopics…' : 'Next'}
+            </button>
+          </div>
+        )}
+
+        {step === 'setup' && (
+          <div className="form-grid">
+            <div>
+              <h3 style={{ marginTop: 0 }}>Suggested subtopics</h3>
+              <p className="helper-text" style={{ marginBottom: '0.75rem' }}>
+                Use these prompts to stress-test your position.
+              </p>
+              <ul className="chip-list">
+                {subtopics.map((sub, i) => (
+                  <li key={i} className="chip">
+                    {sub}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="surface-subtle form-grid">
+              <div>
+                <h3 style={{ margin: 0 }}>Upload evidence (optional)</h3>
+                <p className="helper-text">
+                  Paste relevant article text to add it to the shared context.
+                </p>
+              </div>
+              <textarea
+                className="textarea-field"
+                placeholder="Paste article content here..."
+                value={articleText}
+                onChange={(e) => setArticleText(e.target.value)}
+              />
+              <div className="action-row">
+                <span className="helper-text">
+                  {uploadCount} article{uploadCount !== 1 ? 's' : ''} uploaded
+                </span>
+                <button
+                  className="button button-secondary"
+                  onClick={handleUpload}
+                  disabled={loading || !articleText.trim()}
+                  type="button"
+                >
+                  {loading ? 'Uploading…' : 'Upload article'}
+                </button>
+              </div>
+            </div>
+
+            <button className="button button-primary button-full" onClick={handleStartDebate} type="button">
+              Start debate
+            </button>
+          </div>
+        )}
       </section>
     </main>
   );

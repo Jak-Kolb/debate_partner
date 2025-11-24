@@ -21,34 +21,54 @@ export function FeedbackPanel({
   actions,
 }: FeedbackPanelProps) {
   return (
-    <section className="border rounded p-4 space-y-3 bg-white shadow-sm">
-      <header className="flex items-center justify-between">
+    <section className="panel">
+      <header className="panel-header">
         <div>
-          <h2 className="text-lg font-semibold">Rubric Feedback</h2>
-          <p className="text-sm text-slate-600">Overall rating: {label}</p>
+          <p className="eyebrow">Rubric feedback</p>
+          <h2>{label}</h2>
+          <p className="helper-text">Overall rating</p>
         </div>
-        <span className="text-2xl font-bold">{aqs.toFixed(2)}</span>
+        <div className="score-pill" aria-label="Adjusted quality score">
+          <span className="score-pill__label">AQS</span>
+          <span className="score-pill__value">{aqs.toFixed(2)}</span>
+        </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        {/* Show each rubric dimension in a compact grid for quick scanning. */}
+      <div className="metric-grid" role="list">
         {Object.entries(scores).map(([dimension, value]) => (
-          <div key={dimension} className="rounded border px-3 py-2">
-            <p className="font-semibold capitalize">{dimension}</p>
-            <p className="text-slate-600">{value.toFixed(2)} / 5</p>
+          <div key={dimension} className="metric-card" role="listitem">
+            <div className="metric-card__header">
+              <span className="capitalize">{dimension}</span>
+              <span>{value.toFixed(2)} / 5</span>
+            </div>
+            <div className="metric-bar" aria-hidden>
+              <span
+                className="metric-bar__fill"
+                style={{ width: `${Math.min(100, Math.max(0, (value / 5) * 100))}%` }}
+              />
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="text-sm space-y-1">
-        <p>Hallucination rate: {hallucinationRate.toFixed(2)}%</p>
-        <p>Opposition consistency: {oppositionConsistency.toFixed(2)}%</p>
+      <div className="stat-grid">
+        <div className="stat-card">
+          <p className="helper-text">Hallucination rate</p>
+          <strong>{hallucinationRate.toFixed(2)}%</strong>
+        </div>
+        <div className="stat-card">
+          <p className="helper-text">Opposition consistency</p>
+          <strong>{oppositionConsistency.toFixed(2)}%</strong>
+        </div>
       </div>
 
-      {notes && <p className="text-sm text-slate-700">{notes}</p>}
+      {notes && (
+        <blockquote className="notes">
+          {notes}
+        </blockquote>
+      )}
 
-      {actions && <div className="pt-2">{actions}</div>}
-      {/* Parent pages can pass CTA links (continue debating, etc.) via actions. */}
+      {actions && <div className="panel-footer">{actions}</div>}
     </section>
   );
 }

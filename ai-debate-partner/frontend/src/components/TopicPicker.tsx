@@ -18,30 +18,32 @@ export function TopicPicker({ onStart, loading = false }: TopicPickerProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-xl mx-auto">
-      <div>
-        <label className="block text-sm font-medium">Topic</label>
+    <form onSubmit={handleSubmit} className="form-grid topic-picker">
+      <div className="form-grid">
+        <label htmlFor="topic-input" className="helper-text">
+          Topic
+        </label>
         <input
-          className="w-full border rounded px-3 py-2"
+          id="topic-input"
+          className="input-field"
           placeholder="e.g., Universal Basic Income"
           value={topic}
           onChange={(event) => setTopic(event.target.value)}
         />
       </div>
-      <div>
-        <label className="block text-sm font-medium">Your stance</label>
+      <div className="form-grid">
+        <label htmlFor="stance-input" className="helper-text">
+          Your stance
+        </label>
         <input
-          className="w-full border rounded px-3 py-2"
+          id="stance-input"
+          className="input-field"
           placeholder="State your position that the AI should oppose"
           value={stance}
           onChange={(event) => setStance(event.target.value)}
         />
       </div>
-      <button
-        className="w-full rounded bg-slate-900 text-white py-2 font-semibold disabled:opacity-50"
-        disabled={loading}
-        type="submit"
-      >
+      <button className="button button-primary button-full" disabled={loading} type="submit">
         {loading ? 'Starting debate…' : 'Start debate'}
       </button>
     </form>

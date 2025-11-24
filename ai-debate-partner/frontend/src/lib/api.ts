@@ -17,6 +17,16 @@ export interface StartDebatePayload {
   stance: string;
 }
 
+export async function getSubtopics(topic: string) {
+  const response = await api.post('/topic/subtopics', { topic });
+  return response.data.subtopics;
+}
+
+export async function uploadDocument(content: string) {
+  const response = await api.post('/upload', { content });
+  return response.data;
+}
+
 export async function startDebate(payload: StartDebatePayload) {
   // Kick off a new debate session and receive the assistant opener.
   const response = await api.post('/debate/start', payload);
