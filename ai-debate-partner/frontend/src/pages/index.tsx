@@ -1,10 +1,9 @@
-// Landing page for topic selection before entering the debate flow.
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 
 import { getSubtopics, uploadDocument } from '../lib/api';
 
-export default function HomePage() {
+export default function HomePage() { // landing page for topic selection
   const router = useRouter();
   const [step, setStep] = useState<'topic' | 'setup'>('topic');
   const [topic, setTopic] = useState('');

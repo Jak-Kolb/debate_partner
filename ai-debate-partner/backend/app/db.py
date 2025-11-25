@@ -1,4 +1,3 @@
-"""Database session utilities for SQLAlchemy persistence."""
 import os
 from typing import Iterator
 
@@ -14,15 +13,13 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
 
-def initDb() -> None:
-    """Create database tables for the debate session model."""
-    from .debate import DebateSession  # noqa: F401  # ensure models imported
+def initDb() -> None: # create database tables
+    from .debate import DebateSession  # ensure models imported
 
     Base.metadata.create_all(bind=engine)
 
 
-def getSession() -> Iterator[Session]:
-    """Yield a database session for dependency-injected FastAPI routes."""
+def getSession() -> Iterator[Session]: # yield db session
     session = SessionLocal()
     try:
         yield session

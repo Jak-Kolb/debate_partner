@@ -1,4 +1,3 @@
-// Displays rubric scores and supplemental evaluation guidance.
 import { ReactNode } from 'react';
 
 type FeedbackPanelProps = {
@@ -11,7 +10,7 @@ type FeedbackPanelProps = {
   actions?: ReactNode;
 };
 
-export function FeedbackPanel({
+export function FeedbackPanel({ // displays rubric scores
   label,
   aqs,
   scores,

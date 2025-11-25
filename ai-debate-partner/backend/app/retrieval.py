@@ -1,5 +1,3 @@
-"""Lightweight local retrieval over the on-disk corpora."""
-
 import os
 import uuid
 from dataclasses import dataclass
@@ -19,16 +17,12 @@ STOP_WORDS = {
 
 
 @dataclass
-class RetrievedContext:
-    """Chunked document content returned by the retriever."""
-
+class RetrievedContext: # chunked document content
     source: str
     content: str
 
 
-class CorpusRetriever:
-    """Lightweight local retriever with a fallback when FAISS is unavailable."""
-
+class CorpusRetriever: # lightweight local retriever
     def __init__(
         self,
         corpus_dir: Path | None = None,
@@ -47,8 +41,7 @@ class CorpusRetriever:
         self.overlap = overlap
         self.documents = self._loadDocuments()
 
-    def _loadDocuments(self) -> List[RetrievedContext]:
-        """Read and chunk corpus files into retrievable contexts."""
+    def _loadDocuments(self) -> List[RetrievedContext]: # read and chunk corpus files
         if not self.corpus_dir.exists():
             return []
 
@@ -61,8 +54,7 @@ class CorpusRetriever:
                 )
         return contexts
 
-    def _chunkText(self, text: str) -> Iterable[str]:
-        """Yield overlapping slices of a document for dense retrieval."""
+    def _chunkText(self, text: str) -> Iterable[str]: # yield overlapping slices
         if len(text) <= self.chunk_size:
             yield text
             return
@@ -74,8 +66,7 @@ class CorpusRetriever:
                 break
             yield chunk
 
-    def saveDocument(self, content: str) -> str:
-        """Save a new document to the corpus directory and refresh."""
+    def saveDocument(self, content: str) -> str: # save new document
         if not self.corpus_dir.exists():
             self.corpus_dir.mkdir(parents=True, exist_ok=True)
         
@@ -83,26 +74,23 @@ class CorpusRetriever:
         file_path = self.corpus_dir / filename
         file_path.write_text(content, encoding="utf-8")
         
-        # Refresh the in-memory documents
+        # refresh in-memory documents
         self.refreshCorpus()
         return filename
 
-    def refreshCorpus(self) -> None:
-        """Reload corpus chunks from disk (used at startup or when docs change)."""
+    def refreshCorpus(self) -> None: # reload corpus chunks
         self.documents = self._loadDocuments()
 
-    def clearCorpus(self) -> None:
-        """Delete all files in the corpus directory and clear in-memory documents."""
+    def clearCorpus(self) -> None: # delete all files in corpus
         if self.corpus_dir.exists():
             for path in self.corpus_dir.glob("*.txt"):
                 try:
                     path.unlink()
                 except OSError:
-                    pass  # Best effort deletion
+                    pass  # best effort deletion
         self.documents = []
 
-    def retrieveContexts(self, query: str, limit: int = 3) -> Sequence[RetrievedContext]:
-        """Return the top-N chunks ranked by naive token overlap with the query."""
+    def retrieveContexts(self, query: str, limit: int = 3) -> Sequence[RetrievedContext]: # return top-n chunks
         if not query or not self.documents:
             return []
 
@@ -112,16 +100,14 @@ class CorpusRetriever:
         )
         return ranked[:limit]
 
-    def _overlapScore(self, query: str, text: str) -> int:
-        """Score overlap using shared tokens as a lightweight similarity proxy."""
+    def _overlapScore(self, query: str, text: str) -> int: # score overlap
         window = set(word for word in query.split() if word not in STOP_WORDS)
         if not window:
             return 0
         return sum(1 for token in window if token in text)
 
 
-def formatContext(contexts: Sequence[RetrievedContext]) -> Tuple[str, List[str]]:
-    """Aggregate retrieval chunks into a citation bundle for prompting."""
+def formatContext(contexts: Sequence[RetrievedContext]) -> Tuple[str, List[str]]: # aggregate retrieval chunks
     if not contexts:
         return "", []
 

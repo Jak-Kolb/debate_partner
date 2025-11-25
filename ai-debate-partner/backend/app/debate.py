@@ -1,5 +1,3 @@
-"""Debate session persistence and orchestration logic."""
-
 from __future__ import annotations
 
 import json
@@ -16,9 +14,7 @@ from .retrieval import CorpusRetriever, RetrievedContext, formatContext
 from .schemas import MessagePayload
 
 
-class DebateSession(Base):
-    """SQLAlchemy model storing debate metadata and conversation history."""
-
+class DebateSession(Base): # sql model for debate metadata
     __tablename__ = "debate_sessions"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
@@ -30,27 +26,22 @@ class DebateSession(Base):
     opposition_drift_turns = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    def historyMessages(self) -> List[MessagePayload]:
-        """Return stored turns as Pydantic payloads for downstream consumers."""
+    def historyMessages(self) -> List[MessagePayload]: # return stored turns
         data = json.loads(self.history or "[]")
         return [MessagePayload(**item) for item in data]
 
-    def appendMessage(self, message: MessagePayload) -> None:
-        """Persist a new message onto the serialized conversation history."""
+    def appendMessage(self, message: MessagePayload) -> None: # persist new message
         messages = [msg.model_dump() for msg in self.historyMessages()]
         messages.append(message.model_dump())
         self.history = json.dumps(messages)
 
 
-class DebateManager:
-    """Facade coordinating session storage, retrieval, and model responses."""
-
+class DebateManager: # facade for session storage and model responses
     def __init__(self, retriever: CorpusRetriever, llm: DebateLLM) -> None:
         self.retriever = retriever
         self.llm = llm
 
-    def startSession(self, db: Session, *, topic: str, stance: str) -> Tuple[DebateSession, str, List[str], List[str], bool]:
-        """Create a new session and generate the opening assistant reply."""
+    def startSession(self, db: Session, *, topic: str, stance: str) -> Tuple[DebateSession, str, List[str], List[str], bool]: # create session and generate opening
         session = DebateSession(topic=topic, stance=stance)
         db.add(session)
         db.flush()
@@ -68,8 +59,7 @@ class DebateManager:
         *,
         session: DebateSession,
         user_message: str,
-    ) -> Tuple[str, List[str], List[str], bool]:
-        """Persist a user rebuttal and return the assistant counter-argument."""
+    ) -> Tuple[str, List[str], List[str], bool]: # persist user rebuttal and return counter-argument
         session.appendMessage(
             MessagePayload(role="user", content=user_message, citations=[])
         )
@@ -86,8 +76,7 @@ class DebateManager:
         session: DebateSession,
         db: Session,
         user_message: str,
-    ) -> Tuple[str, List[str], List[str], bool]:
-        """Build the assistant message, update metrics, and persist session state."""
+    ) -> Tuple[str, List[str], List[str], bool]: # build assistant message and update metrics
         history_payloads = session.historyMessages()
         history = [
             LLMMessage(role=msg.role, content=msg.content)
@@ -124,18 +113,15 @@ class DebateManager:
         db.flush()
         return reply, citations, hallucinations, opposition_consistent
 
-    def getSession(self, db: Session, session_id: str) -> DebateSession | None:
-        """Fetch a session by identifier or return None if missing."""
+    def getSession(self, db: Session, session_id: str) -> DebateSession | None: # fetch session by id
         return db.query(DebateSession).filter(DebateSession.id == session_id).one_or_none()
 
-    def oppositionRatio(self, session: DebateSession) -> float:
-        """Return the fraction of turns that maintained opposition to the user stance."""
+    def oppositionRatio(self, session: DebateSession) -> float: # return fraction of turns maintaining opposition
         if session.assistant_turns == 0:
             return 1.0
         return 1 - (session.opposition_drift_turns / session.assistant_turns)
 
-    def hallucinationRate(self, session: DebateSession) -> float:
-        """Compute the percentage of turns flagged for lacking grounding."""
+    def hallucinationRate(self, session: DebateSession) -> float: # compute percentage of turns flagged
         if session.assistant_turns == 0:
             return 0.0
         return session.hallucination_events / session.assistant_turns

@@ -1,25 +1,20 @@
-"""Pydantic schemas describing debate session payloads."""
-
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 
-class StartDebateRequest(BaseModel):
-    """Client request for opening a new debate session."""
+class StartDebateRequest(BaseModel): # client request for new session
     topic: str = Field(..., description="Debate topic or question")
     stance: str = Field(..., description="User's position that the AI should oppose")
 
 
-class MessagePayload(BaseModel):
-    """Normalized message stored in persistent session history."""
+class MessagePayload(BaseModel): # normalized message in history
     role: str
     content: str
     citations: List[str] = Field(default_factory=list)
 
 
-class StartDebateResponse(BaseModel):
-    """Initial assistant reply and metadata returned after session creation."""
+class StartDebateResponse(BaseModel): # initial assistant reply
     session_id: str
     ai_message: str
     citations: List[str] = Field(default_factory=list)
@@ -27,35 +22,29 @@ class StartDebateResponse(BaseModel):
     opposition_consistent: bool
 
 
-class SubtopicRequest(BaseModel):
-    """Request to generate relevant subtopics for a given topic."""
+class SubtopicRequest(BaseModel): # request for subtopics
     topic: str
 
 
-class SubtopicResponse(BaseModel):
-    """List of generated subtopics."""
+class SubtopicResponse(BaseModel): # list of subtopics
     subtopics: List[str]
 
 
-class UploadRequest(BaseModel):
-    """Request to upload a text chunk to the corpus."""
+class UploadRequest(BaseModel): # request to upload text
     content: str
 
 
-class UploadResponse(BaseModel):
-    """Confirmation of upload."""
+class UploadResponse(BaseModel): # confirmation of upload
     message: str
     filename: str
 
 
-class DebateRespondRequest(BaseModel):
-    """User rebuttal payload for an existing debate session."""
+class DebateRespondRequest(BaseModel): # user rebuttal payload
     session_id: str
     user_message: str
 
 
-class DebateRespondResponse(BaseModel):
-    """Assistant counter-response enriched with citations and flags."""
+class DebateRespondResponse(BaseModel): # assistant counter-response
     session_id: str
     ai_message: str
     citations: List[str] = Field(default_factory=list)
@@ -63,21 +52,18 @@ class DebateRespondResponse(BaseModel):
     opposition_consistent: bool
 
 
-class EvaluationRequest(BaseModel):
-    """Request to compute rubric feedback for a completed session."""
+class EvaluationRequest(BaseModel): # request for rubric feedback
     session_id: str
 
 
-class EvaluationScores(BaseModel):
-    """Breakdown of the AQS rubric sub-scores."""
+class EvaluationScores(BaseModel): # breakdown of aqs scores
     clarity: float
     evidence: float
     logic: float
     rebuttal: float
 
 
-class EvaluationResponse(BaseModel):
-    """Aggregated evaluation metrics surfaced to the frontend."""
+class EvaluationResponse(BaseModel): # aggregated evaluation metrics
     session_id: str
     aqs_overall: float
     scores: EvaluationScores

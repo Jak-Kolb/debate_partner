@@ -1,5 +1,3 @@
-"""FastAPI entrypoint wiring debate and evaluation endpoints."""
-
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -48,21 +46,18 @@ def onStartup() -> None:
 
 
 @app.get("/health")
-def healthCheck() -> dict[str, str]:
-    """Return a simple readiness probe for deployment checks."""
+def healthCheck() -> dict[str, str]: # readiness probe
     return {"status": "ok"}
 
 
 @app.post("/topic/subtopics", response_model=SubtopicResponse)
-def generateSubtopics(payload: SubtopicRequest) -> SubtopicResponse:
-    """Generate relevant subtopics for a given topic."""
+def generateSubtopics(payload: SubtopicRequest) -> SubtopicResponse: # generate subtopics
     subtopics = llm.generateSubtopics(payload.topic)
     return SubtopicResponse(subtopics=subtopics)
 
 
 @app.post("/upload", response_model=UploadResponse)
-def uploadDocument(payload: UploadRequest) -> UploadResponse:
-    """Upload a text chunk to the corpus."""
+def uploadDocument(payload: UploadRequest) -> UploadResponse: # upload text chunk
     filename = retriever.saveDocument(payload.content)
     return UploadResponse(message="Document uploaded successfully", filename=filename)
 
@@ -71,8 +66,7 @@ def uploadDocument(payload: UploadRequest) -> UploadResponse:
 def debateStart(
     payload: StartDebateRequest,
     db: Session = Depends(getSession),
-) -> StartDebateResponse:
-    """Open a new debate session and return the first assistant turn."""
+) -> StartDebateResponse: # open new debate session
     session, reply, citations, hallucinations, opposition_consistent = debate_manager.startSession(
         db,
         topic=payload.topic,
@@ -91,14 +85,13 @@ def debateStart(
 def debateRespond(
     payload: DebateRespondRequest,
     db: Session = Depends(getSession),
-) -> DebateRespondResponse:
-    """Record a user rebuttal and stream back the assistant reply."""
+) -> DebateRespondResponse: # record user rebuttal and stream reply
     session = debate_manager.getSession(db, payload.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
     reply, citations, hallucinations, opposition_consistent = debate_manager.respond(
-        db,
+        db=db,
         session=session,
         user_message=payload.user_message,
     )
@@ -115,12 +108,13 @@ def debateRespond(
 def evaluateSession(
     payload: EvaluationRequest,
     db: Session = Depends(getSession),
-) -> EvaluationResponse:
-    """Compute rubric feedback for the requested session."""
+) -> EvaluationResponse: # compute rubric feedback
     try:
         response = evaluation_service.evaluateSession(db, payload.session_id)
-        # Clear the corpus after evaluation is complete
+        # clear corpus after evaluation
         retriever.clearCorpus()
         return response
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+

@@ -1,4 +1,3 @@
-// Feedback summary page showing rubric results from the backend.
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -16,7 +15,7 @@ type Evaluation = {
   notes?: string;
 };
 
-export default function SummaryPage() {
+export default function SummaryPage() { // feedback summary page
   const router = useRouter();
   const { sessionId } = router.query;
   const [loading, setLoading] = useState(false);
@@ -25,13 +24,13 @@ export default function SummaryPage() {
 
   useEffect(() => {
     const run = async () => {
-      // Fetch evaluation data whenever the session query parameter changes.
+      // fetch evaluation data
       if (typeof sessionId !== 'string') return;
       setLoading(true);
       setError(null);
       try {
         const response = await evaluateSession(sessionId);
-        // Persist so we can render the scores immediately after load finishes.
+        // persist scores
         setEvaluation(response);
       } catch (err) {
         console.error(err);

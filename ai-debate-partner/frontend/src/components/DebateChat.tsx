@@ -1,4 +1,3 @@
-// Renders the live debate transcript and message composer.
 import { FormEvent, useMemo, useState } from 'react';
 
 type TranscriptItem = {
@@ -10,17 +9,16 @@ type TranscriptItem = {
 };
 
 type DebateChatProps = {
-  sessionId: string;
   transcript: TranscriptItem[];
   onSend: (message: string) => Promise<void> | void;
   busy?: boolean;
 };
 
-export function DebateChat({ sessionId, transcript, onSend, busy = false }: DebateChatProps) {
+export function DebateChat({ transcript, onSend, busy = false }: DebateChatProps) { // renders live debate transcript
   const [draft, setDraft] = useState('');
 
   const lastAssistant = useMemo(
-    // Track the latest assistant turn so we can surface stance-drift warnings.
+    // track latest assistant turn
     () => transcript.filter((entry) => entry.role === 'assistant').slice(-1)[0],
     [transcript]
   );

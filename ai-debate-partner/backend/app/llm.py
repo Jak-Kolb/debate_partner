@@ -1,5 +1,3 @@
-"""LLM abstraction that injects anti-sycophancy and factual guardrails."""
-
 from __future__ import annotations
 
 import logging
@@ -30,26 +28,20 @@ def _loadPrompt(name: str) -> str:
 
 
 @dataclass
-class LLMMessage:
-    """Minimal chat-style message used to pass history into the model stub."""
-
+class LLMMessage: # minimal chat message
     role: str
     content: str
 
 
-class DebateLLM:
-    """Abstraction layer for OpenAI chat completions with a deterministic fallback."""
-
-    def __init__(self, *, client: Optional[OpenAIClient] = None, model_name: Optional[str] = None) -> None:
-        """Load reusable system prompts once per process and configure the LLM client."""
+class DebateLLM: # openai chat abstraction
+    def __init__(self, *, client: Optional[OpenAIClient] = None, model_name: Optional[str] = None) -> None: # load prompts and config client
         self.antisycophancy_prompt = _loadPrompt("system_antisycophancy.txt")
         self.guardrails_prompt = _loadPrompt("system_factuality_guardrails.txt")
         self.model_name = model_name or os.getenv("MODEL_NAME") or DEFAULT_MODEL
         self.client: Optional[OpenAIClient]
         self.client = client or self._initClient()
 
-    def _initClient(self) -> Optional[OpenAIClient]:
-        """Initialise the OpenAI client when credentials are present."""
+    def _initClient(self) -> Optional[OpenAIClient]: # init openai client
         if OpenAI is None:
             logger.warning("openai package not available; using deterministic fallback replies.")
             return None
@@ -62,17 +54,15 @@ class DebateLLM:
         base_url = os.getenv("API_BASE") or os.getenv("OPENAI_BASE_URL")
         try:
             return OpenAI(api_key=api_key, base_url=base_url)
-        except Exception as exc:  # pragma: no cover - defensive against SDK issues
+        except Exception as exc:  # defensive against sdk issues
             logger.exception("Failed to initialise OpenAI client: %s", exc)
             return None
 
-    def buildSystemPrompt(self) -> str:
-        """Compose guardrail prompts into a single system instruction block."""
+    def buildSystemPrompt(self) -> str: # compose guardrail prompts
         prompts = [self.antisycophancy_prompt, self.guardrails_prompt]
         return "\n\n".join([p for p in prompts if p])
 
-    def generateSubtopics(self, topic: str) -> List[str]:
-        """Generate 5 relevant subtopics for the given topic."""
+    def generateSubtopics(self, topic: str) -> List[str]: # generate 5 subtopics
         if self.client is not None:
             try:
                 prompt = (
@@ -86,9 +76,9 @@ class DebateLLM:
                 )
                 content = self._extractContent(completion)
                 if content:
-                    # Parse the numbered list
+                    # parse numbered list
                     lines = [line.strip() for line in content.splitlines() if line.strip()]
-                    # Remove numbering (e.g., "1. Subtopic" -> "Subtopic")
+                    # remove numbering
                     subtopics = []
                     for line in lines:
                         parts = line.split(".", 1)
@@ -100,7 +90,7 @@ class DebateLLM:
             except Exception as exc:
                 logger.exception("LLM subtopic generation failed: %s", exc)
 
-        # Fallback if LLM fails or is not configured
+        # fallback if llm fails
         return []
 
     def generateReply(
@@ -113,8 +103,7 @@ class DebateLLM:
         history: List[LLMMessage],
         context_bundle: Optional[str] = None,
         temperature: float = 1,
-    ) -> str:
-        """Call the OpenAI API when available."""
+    ) -> str: # call openai api
         context_items = list(context)
         if context_bundle is None:
             context_bundle, _ = formatContext(context_items)
@@ -151,8 +140,7 @@ class DebateLLM:
         user_message: str,
         history: List[LLMMessage],
         context_text: str,
-    ) -> List[dict[str, str]]:
-        """Translate persisted history and retrieval context into chat messages."""
+    ) -> List[dict[str, str]]: # translate history and context to messages
         instructions = [self.buildSystemPrompt()]
         instructions.append(
             (
@@ -192,8 +180,7 @@ class DebateLLM:
 
         return messages
 
-    def _extractContent(self, completion: object) -> str:
-        """Safely extract assistant content from an OpenAI chat completion response."""
+    def _extractContent(self, completion: object) -> str: # extract assistant content
         choices = getattr(completion, "choices", None)
         if not choices:
             return ""
@@ -206,7 +193,7 @@ class DebateLLM:
         if isinstance(content, str):
             return content.strip()
 
-        if isinstance(content, list):  # pragma: no cover - depends on SDK response format
+        if isinstance(content, list):  # depends on sdk response format
             parts = []
             for part in content:
                 text = getattr(part, "text", None)
@@ -216,14 +203,12 @@ class DebateLLM:
 
         return ""
 
-    def oppositionConsistent(self, reply: str, user_stance: str) -> bool:
-        """Heuristically detect whether the assistant drifted toward the user stance."""
+    def oppositionConsistent(self, reply: str, user_stance: str) -> bool: # detect stance drift
         stance_tokens = set(user_stance.lower().split())
         matches = sum(1 for token in stance_tokens if token in reply.lower())
         return matches < max(1, len(stance_tokens))
 
-    def detectHallucinations(self, reply: str, context: Iterable[RetrievedContext]) -> List[str]:
-        """Flag ungrounded replies when no supporting retrieval context is present."""
+    def detectHallucinations(self, reply: str, context: Iterable[RetrievedContext]) -> List[str]: # flag ungrounded replies
         if any(context):
             return []
         return ["No supporting documents found; treat claims as ungrounded."]

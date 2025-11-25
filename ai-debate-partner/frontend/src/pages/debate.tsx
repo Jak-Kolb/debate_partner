@@ -1,4 +1,3 @@
-// Live debate surface that streams turns and tracks session state.
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
@@ -21,7 +20,7 @@ type StoredSession = {
   initialTurn: TranscriptItem;
 };
 
-export default function DebatePage() {
+export default function DebatePage() { // live debate surface
   const router = useRouter();
   const { sessionId, topic } = router.query;
   const [metadata, setMetadata] = useState<StoredSession | null>(null);
@@ -31,7 +30,7 @@ export default function DebatePage() {
   const [initializing, setInitializing] = useState(false);
 
   useEffect(() => {
-    // Restore the first assistant message and metadata from sessionStorage.
+    // restore first assistant message and metadata
     if (typeof window === 'undefined' || typeof sessionId !== 'string') return;
     const raw = window.sessionStorage.getItem(`debate-${sessionId}`);
     if (!raw) return;
@@ -76,7 +75,7 @@ export default function DebatePage() {
       setMetadata(sessionData);
       setTranscript([initialTurn]);
       
-      // Update URL without reloading
+      // update url without reloading
       router.replace({
         pathname: '/debate',
         query: { sessionId: response.session_id },
@@ -90,7 +89,7 @@ export default function DebatePage() {
   };
 
   const handleSend = async (message: string) => {
-    // Optimistically append the user turn so the UI feels responsive.
+    // optimistically append user turn
     const currentSessionId = metadata?.sessionId || (typeof sessionId === 'string' ? sessionId : null);
     if (!currentSessionId) return;
     
@@ -102,7 +101,7 @@ export default function DebatePage() {
 
     try {
       const response = await sendDebateMessage(currentSessionId, message);
-      // Append the assistant reply once the backend responds.
+      // append assistant reply
       setTranscript((current) => [
         ...current,
         {
@@ -128,7 +127,7 @@ export default function DebatePage() {
     );
   }
 
-  // Case 1: No session yet, ask for stance
+  // case 1: no session yet, ask for stance
   if (!metadata && typeof topic === 'string') {
     return (
       <main className="app-shell">
@@ -166,7 +165,7 @@ export default function DebatePage() {
     );
   }
 
-  // Case 2: Session active
+  // case 2: session active
   if (metadata) {
     return (
       <main className="app-shell">
@@ -180,7 +179,7 @@ export default function DebatePage() {
             </header>
           </div>
 
-          <DebateChat sessionId={metadata.sessionId} transcript={transcript} onSend={handleSend} busy={busy} />
+          <DebateChat transcript={transcript} onSend={handleSend} busy={busy} />
 
           <div className="panel" style={{ textAlign: 'right' }}>
             <Link
