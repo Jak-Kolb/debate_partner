@@ -9,6 +9,14 @@ from typing import Iterable, List, Sequence, Tuple
 DEFAULT_CHUNK_SIZE = 400
 DEFAULT_OVERLAP = 40
 
+STOP_WORDS = {
+    "the", "is", "at", "which", "on", "and", "a", "an", "in", "to", "of",
+    "for", "it", "that", "this", "with", "as", "by", "from", "or", "but",
+    "not", "be", "are", "was", "were", "so", "if", "what", "where", "when",
+    "why", "how", "i", "you", "he", "she", "they", "we", "my", "your",
+    "think", "believe", "opinion", "better", "worse", "vs", "versus"
+}
+
 
 @dataclass
 class RetrievedContext:
@@ -83,6 +91,16 @@ class CorpusRetriever:
         """Reload corpus chunks from disk (used at startup or when docs change)."""
         self.documents = self._loadDocuments()
 
+    def clearCorpus(self) -> None:
+        """Delete all files in the corpus directory and clear in-memory documents."""
+        if self.corpus_dir.exists():
+            for path in self.corpus_dir.glob("*.txt"):
+                try:
+                    path.unlink()
+                except OSError:
+                    pass  # Best effort deletion
+        self.documents = []
+
     def retrieveContexts(self, query: str, limit: int = 3) -> Sequence[RetrievedContext]:
         """Return the top-N chunks ranked by naive token overlap with the query."""
         if not query or not self.documents:
@@ -96,14 +114,7 @@ class CorpusRetriever:
 
     def _overlapScore(self, query: str, text: str) -> int:
         """Score overlap using shared tokens as a lightweight similarity proxy."""
-        stop_words = {
-            "the", "is", "at", "which", "on", "and", "a", "an", "in", "to", "of",
-            "for", "it", "that", "this", "with", "as", "by", "from", "or", "but",
-            "not", "be", "are", "was", "were", "so", "if", "what", "where", "when",
-            "why", "how", "i", "you", "he", "she", "they", "we", "my", "your",
-            "think", "believe", "opinion", "better", "worse", "vs", "versus"
-        }
-        window = set(word for word in query.split() if word not in stop_words)
+        window = set(word for word in query.split() if word not in STOP_WORDS)
         if not window:
             return 0
         return sum(1 for token in window if token in text)

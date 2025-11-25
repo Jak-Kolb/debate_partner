@@ -140,6 +140,3 @@ class DebateManager:
             return 0.0
         return session.hallucination_events / session.assistant_turns
 
-    def historyAsMessages(self, session: DebateSession) -> Sequence[MessagePayload]:
-        """Expose session history for evaluation without leaking ORM internals."""
-        return session.historyMessages()

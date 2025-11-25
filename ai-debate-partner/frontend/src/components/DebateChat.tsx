@@ -37,7 +37,7 @@ export function DebateChat({ sessionId, transcript, onSend, busy = false }: Deba
       <header className="panel-header">
         <div>
           <p className="eyebrow">Active session</p>
-          <h2>Session {sessionId}</h2>
+          <h2>Debate Transcript</h2>
         </div>
         {lastAssistant?.oppositionConsistent === false && (
           <span className="warning-pill">Stance drift detected</span>

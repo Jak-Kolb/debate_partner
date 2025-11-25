@@ -177,7 +177,6 @@ export default function DebatePage() {
                 <p className="eyebrow">Debating now</p>
                 <h1 style={{ margin: 0 }}>{title}</h1>
               </div>
-              {/* <p className="helper-text">Session ID: {metadata.sessionId}</p> */}
             </header>
           </div>
 

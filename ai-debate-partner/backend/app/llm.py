@@ -2,19 +2,15 @@
 
 from __future__ import annotations
 
-import importlib
-import importlib.util
 import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, List, Optional
 
-openai_spec = importlib.util.find_spec("openai")
-if openai_spec:  # pragma: no cover - runtime import when available
-    openai_module = importlib.import_module("openai")
-    OpenAI = getattr(openai_module, "OpenAI", None)
-else:  # pragma: no cover - handled in runtime fallback
+try:
+    from openai import OpenAI
+except ImportError:
     OpenAI = None
 
 OpenAIClient = Any

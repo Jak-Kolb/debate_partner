@@ -1,6 +1,5 @@
 """Database session utilities for SQLAlchemy persistence."""
 import os
-from contextlib import contextmanager
 from typing import Iterator
 
 from sqlalchemy import create_engine
@@ -22,9 +21,8 @@ def initDb() -> None:
     Base.metadata.create_all(bind=engine)
 
 
-@contextmanager
-def sessionScope() -> Iterator[Session]:
-    """Provide a transactional scope around a series of operations."""
+def getSession() -> Iterator[Session]:
+    """Yield a database session for dependency-injected FastAPI routes."""
     session = SessionLocal()
     try:
         yield session
@@ -34,9 +32,3 @@ def sessionScope() -> Iterator[Session]:
         raise
     finally:
         session.close()
-
-
-def getSession() -> Iterator[Session]:
-    """Yield a database session for dependency-injected FastAPI routes."""
-    with sessionScope() as session:
-        yield session

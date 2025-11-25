@@ -118,6 +118,9 @@ def evaluateSession(
 ) -> EvaluationResponse:
     """Compute rubric feedback for the requested session."""
     try:
-        return evaluation_service.evaluateSession(db, payload.session_id)
+        response = evaluation_service.evaluateSession(db, payload.session_id)
+        # Clear the corpus after evaluation is complete
+        retriever.clearCorpus()
+        return response
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

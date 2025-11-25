@@ -23,7 +23,7 @@ class EvaluationService:
         if not session:
             raise ValueError(f"Session {session_id} not found")
 
-        history = self.debate_manager.historyAsMessages(session)
+        history = session.historyMessages()
         assistant_messages = [msg for msg in history if msg.role == "assistant"]
 
         clarity = self._scoreClarity(assistant_messages)
