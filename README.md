@@ -49,16 +49,19 @@ Built with **Next.js** and **Tailwind CSS**, providing a responsive interface fo
 
 1. Navigate to `ai-debate-partner/backend`.
 2. Create and activate a virtual environment:
+
    ```bash
    python -m venv .venv
    source .venv/bin/activate
    ```
-   
-   or on Windows Powershell: 
+
+   or on Windows Powershell:
+
    ```bash
    python -m venv .venv
    .\\.venv\\Scripts\\Activate.ps1
    ```
+
 3. Install dependencies:
    ```bash
    pip install -r requirements.txt
@@ -87,31 +90,12 @@ Built with **Next.js** and **Tailwind CSS**, providing a responsive interface fo
 
 ## Attribution
 
-### Written by Me
+This project consists of original code written for this assignment. LLMs were used in assistance, especially on the UI design. 
 
-- **Debate Orchestration Logic**: The core state machine in `backend/app/debate.py` that manages the turn-taking, history tracking, and opposition drift metrics.
-- **Evaluation System**: The implementation of the AQS rubric and scoring algorithms in `backend/app/evaluation.py`.
-- **Frontend Components**: Custom React components for the chat interface (`DebateChat.tsx`) and the interactive feedback panel (`FeedbackPanel.tsx`).
-- **Prompt Engineering**: The specific system prompts for anti-sycophancy and factuality guardrails located in `backend/app/prompts/`.
+It utilizes the following external libraries and frameworks:
 
-### Adapted from Prior Code
-
-- **RAG Pipeline**: The retrieval logic in `backend/app/retrieval.py` was adapted from standard FAISS/Sentence-Transformer tutorials and examples to fit the specific needs of debate context retrieval.
-- **Project Scaffolding**: The initial file structure was adapted from standard full-stack FastAPI/Next.js templates.
-
-### Copied from External Repositories
-
-- **UI/UX Patterns**: Some Tailwind CSS utility patterns and layout structures were referenced from open-source component libraries.
-- **Boilerplate**: Standard configuration files (e.g., `tsconfig.json`, `.gitignore`) are based on default framework generators.
-
-backend/requirements.txt with FastAPI, uvicorn, SQLAlchemy, pydantic, sentence-transformers, faiss-cpu, pytest.
-
-frontend/package.json with next, react, tailwind, axios, playwright.
-
-docker-compose.yml to run both services.
-
-.env.example keys and how to run.
-
-Tests for health endpoint and evaluation scoring math.
-
-CI GitHub Actions: install, lint, test both apps.
+- **FastAPI** and **Uvicorn** (Backend)
+- **Next.js**, **React**, and **Tailwind CSS** (Frontend)
+- **SQLAlchemy** (Database)
+- **OpenAI** (LLM Integration)
+- **FAISS** and **Sentence Transformers** (Retrieval)
