@@ -54,7 +54,7 @@ Built with **Next.js** and **Tailwind CSS**, providing a responsive interface fo
    source .venv/bin/activate
    ```
    
-   or on windows: 
+   or on Windows Powershell: 
    ```bash
    python -m venv .venv
    .\\.venv\\Scripts\\Activate.ps1
