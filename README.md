@@ -90,7 +90,7 @@ Built with **Next.js** and **Tailwind CSS**, providing a responsive interface fo
 
 ## Attribution
 
-This project consists of original code written for this assignment. LLMs were used in assistance, especially on the UI design. 
+This project consists of original code written for this assignment. LLMs were used in assistance, especially on the UI design.
 
 It utilizes the following external libraries and frameworks:
 
@@ -98,4 +98,3 @@ It utilizes the following external libraries and frameworks:
 - **Next.js**, **React**, and **Tailwind CSS** (Frontend)
 - **SQLAlchemy** (Database)
 - **OpenAI** (LLM Integration)
-- **FAISS** and **Sentence Transformers** (Retrieval)
