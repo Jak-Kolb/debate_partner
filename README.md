@@ -1,4 +1,4 @@
-# AI Debate Partner
+# Discoursa
 
 An LLM-powered debate partner designed to engage users in fair, beneficial, and heated debates. The system challenges the user's stance, resists sycophancy, grounds claims in evidence, and provides detailed feedback based on a debate rubric.
 
@@ -33,7 +33,6 @@ Built with **Next.js** and **Tailwind CSS**, providing a responsive interface fo
 - **FastAPI & Uvicorn**: Web framework and ASGI server.
 - **SQLAlchemy**: ORM for database interactions.
 - **OpenAI**: Client for LLM generation.
-- **Sentence-Transformers & FAISS**: For embedding generation and vector similarity search.
 - **Pydantic**: Data validation and settings management.
 
 ### Frontend
