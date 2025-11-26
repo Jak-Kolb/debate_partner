@@ -53,6 +53,12 @@ Built with **Next.js** and **Tailwind CSS**, providing a responsive interface fo
    python -m venv .venv
    source .venv/bin/activate
    ```
+   
+   or on windows: 
+   ```bash
+   python -m venv .venv
+   .\\.venv\\Scripts\\Activate.ps1
+   ```
 3. Install dependencies:
    ```bash
    pip install -r requirements.txt
