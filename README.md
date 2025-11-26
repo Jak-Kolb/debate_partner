@@ -33,7 +33,6 @@ Built with **Next.js** and **Tailwind CSS**, providing a responsive interface fo
 - **FastAPI & Uvicorn**: Web framework and ASGI server.
 - **SQLAlchemy**: ORM for database interactions.
 - **OpenAI**: Client for LLM generation.
-- **Sentence-Transformers & FAISS**: For embedding generation and vector similarity search.
 - **Pydantic**: Data validation and settings management.
 
 ### Frontend
