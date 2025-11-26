@@ -1,4 +1,4 @@
-# AI Debate Partner
+# Discoursa
 
 An LLM-powered debate partner designed to engage users in fair, beneficial, and heated debates. The system challenges the user's stance, resists sycophancy, grounds claims in evidence, and provides detailed feedback based on a debate rubric.
 
