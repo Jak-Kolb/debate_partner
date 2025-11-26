@@ -13,7 +13,7 @@ Built with **FastAPI**, this service handles the core debate logic, LLM interact
 - **`app/main.py`**: Entry point for the API, defining endpoints for starting debates, responding, and evaluation.
 - **`app/debate.py`**: Manages debate sessions, state persistence, and the orchestration of the debate flow.
 - **`app/llm.py`**: Abstraction layer for LLM providers (e.g., OpenAI), handling prompt construction and generation.
-- **`app/retrieval.py`**: Implements the RAG (Retrieval-Augmented Generation) pipeline using **FAISS** and **Sentence Transformers** to ground arguments in the provided corpora.
+- **`app/retrieval.py`**: Implements the RAG (Retrieval-Augmented Generation) to ground arguments in the user provided corpora.
 - **`app/evaluation.py`**: Contains the logic for scoring debates based on the Argument Quality Score (AQS) rubric, checking for hallucinations, and tracking opposition consistency.
 - **`app/db.py`**: Database configuration using **SQLAlchemy** (defaults to SQLite).
 - **`data/corpora/`**: Directory for text files used as the knowledge base for the debate partner.
